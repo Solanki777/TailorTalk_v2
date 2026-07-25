@@ -12,7 +12,7 @@ TestPilot AI is a web application with a FastAPI backend and a custom Tailwind C
 ### 1. Set Up Python Environment
 ```bash
 python -m venv venv
-venv\Scripts\activate
+.\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
 
