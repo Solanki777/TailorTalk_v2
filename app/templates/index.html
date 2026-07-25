@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="w-full max-w-2xl animate-fade-in">
+    <div class="text-center mb-8">
+        <h1 class="font-outfit font-extrabold text-4xl md:text-5xl tracking-tight mb-3">
+            Accelerate your testing with 
+            <span class="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">AI Validation</span>
+        </h1>
+        <p class="text-slate-400 max-w-md mx-auto text-base">
+            Upload your application logs, schemas, or source files to automatically parse and prepare them for pilot testing.
+        </p>
+    </div>
+
+    <!-- Glassmorphism Container -->
+    <div class="glass-panel p-8 rounded-2xl border border-white/10 shadow-2xl relative overflow-hidden">
+        <!-- Accent light source inside card -->
+        <div class="absolute -right-16 -top-16 w-32 h-32 rounded-full bg-indigo-500/10 blur-2xl pointer-events-none"></div>
+        <div class="absolute -left-16 -bottom-16 w-32 h-32 rounded-full bg-purple-500/10 blur-2xl pointer-events-none"></div>
+
+        <!-- Drag & Drop Upload Zone -->
+        <div id="dropzone" class="border-2 border-dashed border-slate-700/60 hover:border-indigo-500/50 hover:bg-slate-900/40 rounded-xl p-10 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 group">
+            <input type="file" id="fileInput" class="hidden" />
+            
+            <!-- Upload Icon with animate-bounce on hover -->
+            <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center border border-white/5 shadow-inner mb-4 group-hover:scale-110 group-hover:border-indigo-500/35 transition-all duration-300">
+                <svg class="w-7 h-7 text-indigo-400 group-hover:animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                </svg>
+            </div>
+            
+            <p class="font-semibold text-lg text-slate-200 mb-1">
+                Drag and drop your file here
+            </p>
+            <p class="text-sm text-slate-400 mb-4">
+                or <span class="text-indigo-400 group-hover:underline font-medium">browse local files</span>
+            </p>
+            
+            <div class="flex items-center gap-4 text-xs text-slate-500 border-t border-white/5 pt-4 w-full justify-center">
+                <span>Maximum size: 50MB</span>
+                <span class="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
+                <span>All formats accepted</span>
+            </div>
+        </div>
+
+        <!-- File List / Upload Progress Area -->
+        <div id="uploadProgressContainer" class="mt-6 hidden space-y-4">
+            <div class="h-px bg-white/5 my-4"></div>
+            <h3 class="text-sm font-semibold text-slate-300">Uploading Queue</h3>
+            
+            <!-- Progress Card -->
+            <div id="progressCard" class="flex items-center gap-4 p-4 rounded-xl bg-slate-950/40 border border-white/5">
+                <div class="p-2.5 rounded-lg bg-indigo-500/10 text-indigo-400">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                </div>
+                
+                <div class="flex-grow min-w-0">
+                    <div class="flex justify-between text-sm mb-1">
+                        <span id="fileNameDisplay" class="font-medium text-slate-200 truncate">log_file_2026.log</span>
+                        <span id="progressPercentage" class="text-xs text-indigo-400 font-semibold">0%</span>
+                    </div>
+                    
+                    <!-- Outer progress bar -->
+                    <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden">
+                        <div id="progressBar" class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-150" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success/Error Notification -->
+        <div id="notification" class="mt-6 hidden p-4 rounded-xl border flex items-start gap-3 transition-all duration-300">
+            <!-- Icon placeholder -->
+            <div id="notificationIcon" class="mt-0.5"></div>
+            <div>
+                <h4 id="notificationTitle" class="text-sm font-semibold">Upload Complete</h4>
+                <p id="notificationMessage" class="text-xs mt-0.5 text-slate-400"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/upload.js"></script>
+{% endblock %}

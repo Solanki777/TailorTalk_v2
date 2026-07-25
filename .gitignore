@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.env
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node.js
+node_modules/
+npm-debug.log*
+
+# Static CSS build outputs
+/app/static/css/output.css
+
+# Storage / uploads
+/storage/uploads/*
+!/storage/uploads/.gitkeep
