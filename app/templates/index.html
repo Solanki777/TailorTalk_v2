@@ -79,6 +79,43 @@
                 <p id="notificationMessage" class="text-xs mt-0.5 text-slate-400"></p>
             </div>
         </div>
+
+        <!-- Pipeline Results Panel -->
+        <div id="resultsPanel" class="mt-6 hidden">
+            <div class="h-px bg-white/5 my-4"></div>
+
+            <!-- Summary cards -->
+            <div class="grid grid-cols-3 gap-3 mb-4">
+                <div class="p-3 rounded-lg bg-slate-950/40 border border-white/5 text-center">
+                    <div id="statTestCases" class="text-xl font-bold text-slate-100">0</div>
+                    <div class="text-[10px] text-slate-500 uppercase tracking-wide mt-1">Test Cases</div>
+                </div>
+                <div class="p-3 rounded-lg bg-slate-950/40 border border-white/5 text-center">
+                    <div id="statErrors" class="text-xl font-bold text-rose-400">0</div>
+                    <div class="text-[10px] text-slate-500 uppercase tracking-wide mt-1">Rule Errors</div>
+                </div>
+                <div class="p-3 rounded-lg bg-slate-950/40 border border-white/5 text-center">
+                    <div id="statWarnings" class="text-xl font-bold text-amber-400">0</div>
+                    <div class="text-[10px] text-slate-500 uppercase tracking-wide mt-1">Warnings</div>
+                </div>
+            </div>
+
+            <!-- AI summary -->
+            <div id="aiSummaryBox" class="p-4 rounded-lg bg-slate-950/40 border border-white/5 mb-4 hidden">
+                <h4 class="text-xs font-semibold text-indigo-400 uppercase tracking-wide mb-1.5">AI Analysis</h4>
+                <p id="aiSummaryText" class="text-sm text-slate-300 leading-relaxed"></p>
+            </div>
+
+            <!-- Report downloads -->
+            <div id="reportDownloads" class="flex gap-3 hidden">
+                <a id="downloadPdfLink" href="#" class="flex-1 text-center text-sm font-medium py-2.5 rounded-lg bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/25 transition-colors">
+                    Download PDF Report
+                </a>
+                <a id="downloadXlsxLink" href="#" class="flex-1 text-center text-sm font-medium py-2.5 rounded-lg bg-purple-500/15 text-purple-300 border border-purple-500/30 hover:bg-purple-500/25 transition-colors">
+                    Download XLSX Report
+                </a>
+            </div>
+        </div>
     </div>
 </div>
 

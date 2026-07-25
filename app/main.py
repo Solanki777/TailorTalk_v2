@@ -21,7 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
-from app.routes import pages, upload
+from app.routes import pages, upload, workspace
 
 logger = logging.getLogger("testpilot")
 
@@ -112,6 +112,7 @@ def _register_routers(app: FastAPI) -> None:
     """
     app.include_router(pages.router)
     app.include_router(upload.router, prefix=settings.API_PREFIX)
+    app.include_router(workspace.router, prefix=settings.API_PREFIX)
 
 
 def _register_health_check(app: FastAPI) -> None:

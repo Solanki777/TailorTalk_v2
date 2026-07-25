@@ -11,6 +11,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const notificationTitle = document.getElementById('notificationTitle');
     const notificationMessage = document.getElementById('notificationMessage');
 
+    const resultsPanel = document.getElementById('resultsPanel');
+    const statTestCases = document.getElementById('statTestCases');
+    const statErrors = document.getElementById('statErrors');
+    const statWarnings = document.getElementById('statWarnings');
+    const aiSummaryBox = document.getElementById('aiSummaryBox');
+    const aiSummaryText = document.getElementById('aiSummaryText');
+    const reportDownloads = document.getElementById('reportDownloads');
+    const downloadPdfLink = document.getElementById('downloadPdfLink');
+    const downloadXlsxLink = document.getElementById('downloadXlsxLink');
+
     // Trigger click on input when clicking dropzone
     dropzone.addEventListener('click', () => fileInput.click());
 
@@ -73,6 +83,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Reset states
         progressContainer.classList.remove('hidden');
         notification.classList.add('hidden');
+        resultsPanel.classList.add('hidden');
+        aiSummaryBox.classList.add('hidden');
+        reportDownloads.classList.add('hidden');
         fileNameDisplay.textContent = file.name;
         progressBar.style.width = '0%';
         progressPercentage.textContent = '0%';
@@ -96,8 +109,16 @@ document.addEventListener('DOMContentLoaded', () => {
         xhr.addEventListener('load', () => {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const response = JSON.parse(xhr.responseText);
+
+                if (response.status === 'failed') {
+                    progressBar.className = 'h-full bg-rose-500 rounded-full transition-all duration-150';
+                    showNotification('error', 'Analysis Failed', response.error || 'The pipeline could not process this file.');
+                    return;
+                }
+
                 progressBar.className = 'h-full bg-emerald-500 rounded-full transition-all duration-150';
-                showNotification('success', 'File Uploaded Successfully', `Stored securely: ${response.filename} (${formatBytes(response.file_size)})`);
+                showNotification('success', 'Analysis Complete', `${file.name} ran through the full pipeline successfully.`);
+                showResults(response);
             } else {
                 let errorMsg = 'An error occurred during upload.';
                 try {
@@ -114,8 +135,33 @@ document.addEventListener('DOMContentLoaded', () => {
             showNotification('error', 'Upload Failed', 'Network error or connection lost.');
         });
 
-        xhr.open('POST', '/api/v1/upload');
+        // Uploading the spec file runs it through the full pipeline:
+        // Parse -> Rule Engine -> AI Analysis -> Report.
+        xhr.open('POST', '/api/v1/workspaces');
         xhr.send(formData);
+    }
+
+    function showResults(response) {
+        const spec = response.spec || { test_cases: [] };
+        const ruleEngine = response.rule_engine || { error_count: 0, warning_count: 0 };
+        const aiAnalysis = response.ai_analysis;
+
+        statTestCases.textContent = spec.test_cases ? spec.test_cases.length : 0;
+        statErrors.textContent = ruleEngine.error_count || 0;
+        statWarnings.textContent = ruleEngine.warning_count || 0;
+
+        if (aiAnalysis && aiAnalysis.summary) {
+            aiSummaryText.textContent = aiAnalysis.summary;
+            aiSummaryBox.classList.remove('hidden');
+        }
+
+        if (response.report_pdf_url && response.report_xlsx_url) {
+            downloadPdfLink.href = response.report_pdf_url;
+            downloadXlsxLink.href = response.report_xlsx_url;
+            reportDownloads.classList.remove('hidden');
+        }
+
+        resultsPanel.classList.remove('hidden');
     }
 
     function formatBytes(bytes, decimals = 2) {
