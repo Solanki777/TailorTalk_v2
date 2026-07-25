@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const fileNameDisplay = document.getElementById('fileNameDisplay');
     const progressPercentage = document.getElementById('progressPercentage');
     const progressBar = document.getElementById('progressBar');
-    
+
     const notification = document.getElementById('notification');
     const notificationIcon = document.getElementById('notificationIcon');
     const notificationTitle = document.getElementById('notificationTitle');
@@ -21,6 +21,50 @@ document.addEventListener('DOMContentLoaded', () => {
     const downloadPdfLink = document.getElementById('downloadPdfLink');
     const downloadXlsxLink = document.getElementById('downloadXlsxLink');
     const rulesSourceBadge = document.getElementById('rulesSourceBadge');
+
+    // Annunciator strip lamps
+    const lamps = {
+        parse: document.getElementById('lampParse'),
+        rules: document.getElementById('lampRules'),
+        ai: document.getElementById('lampAi'),
+        report: document.getElementById('lampReport'),
+    };
+    const LAMP_ORDER = ['parse', 'rules', 'ai', 'report'];
+    let lampSweepInterval = null;
+
+    function setLamp(key, state) {
+        const el = lamps[key];
+        if (!el) return;
+        el.classList.remove('is-active', 'is-pass', 'is-fail');
+        if (state) el.classList.add(state);
+    }
+
+    function resetLamps() {
+        LAMP_ORDER.forEach((key) => setLamp(key, null));
+    }
+
+    function stopLampSweep() {
+        if (lampSweepInterval) {
+            clearInterval(lampSweepInterval);
+            lampSweepInterval = null;
+        }
+    }
+
+    // While we're waiting on the server (parse -> rules -> AI -> report all
+    // happen in one request), sweep the lamps amber in sequence so there's
+    // real, honest feedback that something is happening, rather than a
+    // static spinner. Final states get set from the actual response.
+    function startLampSweep() {
+        stopLampSweep();
+        resetLamps();
+        let i = 0;
+        setLamp(LAMP_ORDER[0], 'is-active');
+        lampSweepInterval = setInterval(() => {
+            setLamp(LAMP_ORDER[i], 'is-pass');
+            i = (i + 1) % LAMP_ORDER.length;
+            setLamp(LAMP_ORDER[i], 'is-active');
+        }, 650);
+    }
 
     // Custom test cases / rules UI
     const rulesModeDefault = document.getElementById('rulesModeDefault');
@@ -81,7 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
         dropzone.addEventListener(eventName, (e) => {
             e.preventDefault();
             e.stopPropagation();
-            dropzone.classList.add('border-indigo-500', 'bg-slate-900/40');
+            dropzone.classList.add('is-dragging');
         }, false);
     });
 
@@ -89,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
         dropzone.addEventListener(eventName, (e) => {
             e.preventDefault();
             e.stopPropagation();
-            dropzone.classList.remove('border-indigo-500', 'bg-slate-900/40');
+            dropzone.classList.remove('is-dragging');
         }, false);
     });
 
@@ -103,22 +147,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function showNotification(type, title, message) {
-        notification.classList.remove('hidden', 'bg-emerald-500/10', 'border-emerald-500/20', 'text-emerald-400', 'bg-rose-500/10', 'border-rose-500/20', 'text-rose-400');
-        
+        notification.classList.remove('hidden', 'bg-phosphor/10', 'border-phosphor/30', 'text-phosphor', 'bg-caution/10', 'border-caution/30', 'text-caution');
+
         if (type === 'success') {
-            notification.classList.add('bg-emerald-500/10', 'border-emerald-500/20', 'text-emerald-400');
+            notification.classList.add('bg-phosphor/10', 'border-phosphor/30', 'text-phosphor');
             notificationIcon.innerHTML = `
-                <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-phosphor" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>`;
         } else {
-            notification.classList.add('bg-rose-500/10', 'border-rose-500/20', 'text-rose-400');
+            notification.classList.add('bg-caution/10', 'border-caution/30', 'text-caution');
             notificationIcon.innerHTML = `
-                <svg class="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-caution" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>`;
         }
-        
+
         notificationTitle.textContent = title;
         notificationMessage.textContent = message;
         notification.classList.remove('hidden');
@@ -155,11 +199,9 @@ document.addEventListener('DOMContentLoaded', () => {
         fileNameDisplay.textContent = file.name;
         progressBar.style.width = '0%';
         progressPercentage.textContent = '0%';
-        
-        // Reset color classes for progress bar
-        progressBar.className = 'h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-150';
-        
-        // Use XMLHttpRequest to track progress
+        progressBar.className = 'h-full bg-instrument-amber rounded-full transition-all duration-150';
+        resetLamps();
+
         const xhr = new XMLHttpRequest();
         const formData = new FormData();
         formData.append('file', file);
@@ -172,20 +214,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 const percentComplete = Math.round((e.loaded / e.total) * 100);
                 progressBar.style.width = percentComplete + '%';
                 progressPercentage.textContent = percentComplete + '%';
+                if (percentComplete >= 100 && !lampSweepInterval) {
+                    startLampSweep();
+                }
             }
         });
 
         xhr.addEventListener('load', () => {
+            stopLampSweep();
+
             if (xhr.status >= 200 && xhr.status < 300) {
                 const response = JSON.parse(xhr.responseText);
 
                 if (response.status === 'failed') {
-                    progressBar.className = 'h-full bg-rose-500 rounded-full transition-all duration-150';
+                    progressBar.className = 'h-full bg-caution rounded-full transition-all duration-150';
+                    setLamp('parse', 'is-fail');
+                    setLamp('rules', null);
+                    setLamp('ai', null);
+                    setLamp('report', null);
                     showNotification('error', 'Analysis Failed', response.error || 'The pipeline could not process this file.');
                     return;
                 }
 
-                progressBar.className = 'h-full bg-emerald-500 rounded-full transition-all duration-150';
+                progressBar.className = 'h-full bg-phosphor rounded-full transition-all duration-150';
                 showNotification('success', 'Analysis Complete', `${file.name} ran through the full pipeline successfully.`);
                 showResults(response);
             } else {
@@ -194,13 +245,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     const response = JSON.parse(xhr.responseText);
                     errorMsg = response.detail || errorMsg;
                 } catch(e) {}
-                progressBar.className = 'h-full bg-rose-500 rounded-full transition-all duration-150';
+                progressBar.className = 'h-full bg-caution rounded-full transition-all duration-150';
+                setLamp('parse', 'is-fail');
                 showNotification('error', 'Upload Failed', errorMsg);
             }
         });
 
         xhr.addEventListener('error', () => {
-            progressBar.className = 'h-full bg-rose-500 rounded-full transition-all duration-150';
+            stopLampSweep();
+            progressBar.className = 'h-full bg-caution rounded-full transition-all duration-150';
+            setLamp('parse', 'is-fail');
             showNotification('error', 'Upload Failed', 'Network error or connection lost.');
         });
 
@@ -215,6 +269,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const ruleEngine = response.rule_engine || { error_count: 0, warning_count: 0 };
         const aiAnalysis = response.ai_analysis;
 
+        // Set final lamp states from the actual response rather than the sweep guess.
+        setLamp('parse', 'is-pass');
+        setLamp('rules', (ruleEngine.error_count || 0) > 0 ? 'is-fail' : 'is-pass');
+        setLamp('ai', (aiAnalysis && !aiAnalysis.skipped_reason) ? 'is-pass' : 'is-fail');
+        setLamp('report', (response.report_pdf_url && response.report_xlsx_url) ? 'is-pass' : 'is-fail');
+
         statTestCases.textContent = spec.test_cases ? spec.test_cases.length : 0;
         statErrors.textContent = ruleEngine.error_count || 0;
         statWarnings.textContent = ruleEngine.warning_count || 0;
@@ -222,8 +282,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const source = ruleEngine.source || 'default';
         rulesSourceBadge.textContent = source === 'custom' ? 'Custom rules' : 'Default rules';
         rulesSourceBadge.className = source === 'custom'
-            ? 'text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-300'
-            : 'text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border border-white/10 text-slate-400';
+            ? 'console-label px-2 py-0.5 rounded-full border border-phosphor/30 bg-phosphor/10 text-phosphor'
+            : 'console-label px-2 py-0.5 rounded-full border border-panel-wire text-instrument-gray';
 
         if (aiAnalysis && aiAnalysis.summary) {
             aiSummaryText.textContent = aiAnalysis.summary;

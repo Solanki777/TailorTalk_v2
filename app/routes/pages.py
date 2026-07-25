@@ -40,11 +40,17 @@ async def settings_page(request: Request):
     (from environment variables / .env) rather than editable, persisted
     preferences.
     """
-    masked_key = (
+    masked_gemini_key = (
         f"{settings.GEMINI_API_KEY[:4]}{'•' * 10}"
         if settings.GEMINI_API_KEY
         else "Not configured"
     )
+    masked_groq_key = (
+        f"{settings.GROQ_API_KEY[:4]}{'•' * 10}"
+        if settings.GROQ_API_KEY
+        else "Not configured"
+    )
+    active_provider = "Groq" if settings.GROQ_API_KEY else ("Gemini" if settings.GEMINI_API_KEY else "None")
 
     return templates.TemplateResponse(
         request=request,
@@ -57,8 +63,11 @@ async def settings_page(request: Request):
             "api_prefix": settings.API_PREFIX,
             "max_file_size_mb": settings.MAX_FILE_SIZE_MB,
             "allowed_extensions": sorted(settings.ALLOWED_EXTENSIONS),
+            "active_provider": active_provider,
+            "groq_model": settings.GROQ_MODEL,
+            "groq_key_display": masked_groq_key,
             "gemini_model": settings.GEMINI_MODEL,
-            "gemini_key_display": masked_key,
+            "gemini_key_display": masked_gemini_key,
             "storage_path": str(settings.storage_path),
             "workspace_retention_days": settings.WORKSPACE_RETENTION_DAYS,
         }

@@ -2,113 +2,137 @@
 
 {% block content %}
 <div class="w-full max-w-2xl animate-fade-in">
-    <div class="text-center mb-8">
-        <h1 class="font-outfit font-extrabold text-4xl md:text-5xl tracking-tight mb-3">
-            Accelerate your testing with 
-            <span class="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">AI Validation</span>
+    <div class="mb-8">
+        <p class="console-label text-instrument-amber mb-3">Pre-flight check</p>
+        <h1 class="font-display font-semibold text-3xl md:text-4xl tracking-tight text-fog mb-3">
+            Fly your test suite through instrumented review
         </h1>
-        <p class="text-slate-400 max-w-md mx-auto text-base">
-            Upload your application logs, schemas, or source files to automatically parse and prepare them for pilot testing.
+        <p class="text-instrument-gray max-w-lg text-sm leading-relaxed">
+            Upload a test spec and it runs the full checklist &mdash; parse, rule checks,
+            AI review, report &mdash; before you ship it. Every run leaves an inspectable
+            record behind.
         </p>
     </div>
 
-    <!-- Glassmorphism Container -->
-    <div class="glass-panel p-8 rounded-2xl border border-white/10 shadow-2xl relative overflow-hidden">
-        <!-- Accent light source inside card -->
-        <div class="absolute -right-16 -top-16 w-32 h-32 rounded-full bg-indigo-500/10 blur-2xl pointer-events-none"></div>
-        <div class="absolute -left-16 -bottom-16 w-32 h-32 rounded-full bg-purple-500/10 blur-2xl pointer-events-none"></div>
+    <!-- Instrument panel -->
+    <div class="panel p-6 md:p-8 rounded-2xl relative overflow-hidden">
 
-        <!-- Test cases source toggle -->
+        <!-- Annunciator strip: the pipeline's real-time status lamps -->
+        <div class="panel-inset rounded-xl px-4 py-3 mb-6 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+                <span id="lampParse" class="lamp-dot"></span>
+                <span class="console-label text-instrument-gray">Parse</span>
+            </div>
+            <div class="h-px flex-1 bg-panel-wire mx-1"></div>
+            <div class="flex items-center gap-2">
+                <span id="lampRules" class="lamp-dot"></span>
+                <span class="console-label text-instrument-gray">Rules</span>
+            </div>
+            <div class="h-px flex-1 bg-panel-wire mx-1"></div>
+            <div class="flex items-center gap-2">
+                <span id="lampAi" class="lamp-dot"></span>
+                <span class="console-label text-instrument-gray">AI</span>
+            </div>
+            <div class="h-px flex-1 bg-panel-wire mx-1"></div>
+            <div class="flex items-center gap-2">
+                <span id="lampReport" class="lamp-dot"></span>
+                <span class="console-label text-instrument-gray">Report</span>
+            </div>
+        </div>
+
+        <!-- Rule engine mode toggle -->
         <div class="mb-6">
-            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Rule engine</p>
-            <div class="grid grid-cols-2 gap-2 p-1 rounded-xl bg-slate-950/50 border border-white/5">
+            <p class="console-label text-instrument-gray mb-2">Rule engine &mdash; checklist source</p>
+            <div class="grid grid-cols-2 gap-2 p-1 rounded-xl panel-inset">
                 <label class="cursor-pointer">
                     <input type="radio" name="rulesMode" id="rulesModeDefault" value="default" class="peer hidden" checked>
-                    <div class="text-center text-sm font-medium py-2 rounded-lg text-slate-400 peer-checked:bg-indigo-500/20 peer-checked:text-indigo-300 peer-checked:border peer-checked:border-indigo-500/30 border border-transparent transition-all">
+                    <div class="text-center text-sm font-medium py-2 rounded-lg text-instrument-gray peer-checked:bg-instrument-amber/15 peer-checked:text-instrument-amber peer-checked:border peer-checked:border-instrument-amber/40 border border-transparent transition-all">
                         Default test cases
                     </div>
                 </label>
                 <label class="cursor-pointer">
                     <input type="radio" name="rulesMode" id="rulesModeCustom" value="custom" class="peer hidden">
-                    <div class="text-center text-sm font-medium py-2 rounded-lg text-slate-400 peer-checked:bg-purple-500/20 peer-checked:text-purple-300 peer-checked:border peer-checked:border-purple-500/30 border border-transparent transition-all">
+                    <div class="text-center text-sm font-medium py-2 rounded-lg text-instrument-gray peer-checked:bg-phosphor/15 peer-checked:text-phosphor peer-checked:border peer-checked:border-phosphor/40 border border-transparent transition-all">
                         My own test cases
                     </div>
                 </label>
             </div>
 
             <!-- Custom rules panel (hidden unless "My own test cases" is selected) -->
-            <div id="customRulesPanel" class="hidden mt-3 p-4 rounded-xl bg-slate-950/40 border border-white/5 space-y-3">
+            <div id="customRulesPanel" class="hidden mt-3 p-4 rounded-xl panel-inset space-y-3">
                 <div class="flex items-center justify-between">
-                    <p class="text-xs text-slate-400">
+                    <p class="text-xs text-instrument-gray">
                         Define the checks to run against every test case in your uploaded spec.
                     </p>
-                    <button type="button" id="loadExampleRulesBtn" class="text-xs text-indigo-400 hover:underline whitespace-nowrap ml-3">
+                    <button type="button" id="loadExampleRulesBtn" class="text-xs text-phosphor hover:underline whitespace-nowrap ml-3">
                         Load example
                     </button>
                 </div>
 
                 <div>
-                    <label class="text-xs text-slate-500 mb-1 block">Upload a rules JSON file (optional shortcut)</label>
-                    <input type="file" id="rulesFileInput" accept=".json,application/json" class="block w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-purple-500/15 file:text-purple-300 hover:file:bg-purple-500/25 cursor-pointer" />
+                    <label class="text-xs text-instrument-gray mb-1 block">Upload a rules JSON file (optional shortcut)</label>
+                    <input type="file" id="rulesFileInput" accept=".json,application/json" class="block w-full text-xs text-instrument-gray file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-phosphor/15 file:text-phosphor hover:file:bg-phosphor/25 cursor-pointer" />
                 </div>
 
                 <div>
-                    <label class="text-xs text-slate-500 mb-1 block">...or paste/edit rules JSON directly</label>
+                    <label class="text-xs text-instrument-gray mb-1 block">...or paste/edit rules JSON directly</label>
                     <textarea id="customRulesTextarea" rows="8" spellcheck="false"
-                        class="w-full text-xs font-mono bg-slate-900/60 border border-white/5 rounded-lg p-3 text-slate-300 focus:outline-none focus:border-purple-500/40 placeholder-slate-600"
+                        class="w-full text-xs font-mono bg-panel-black/60 border border-panel-wire rounded-lg p-3 text-fog focus:outline-none focus:border-phosphor/50 placeholder-instrument-gray/50"
                         placeholder='{"rules": [{"field": "expected_status", "type": "required", "severity": "error"}]}'></textarea>
                 </div>
-                <p id="customRulesError" class="text-xs text-rose-400 hidden"></p>
+                <p id="customRulesError" class="text-xs text-caution hidden"></p>
             </div>
         </div>
 
-        <!-- Drag & Drop Upload Zone -->
-        <div id="dropzone" class="border-2 border-dashed border-slate-700/60 hover:border-indigo-500/50 hover:bg-slate-900/40 rounded-xl p-10 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 group">
+        <!-- Flight-recorder upload slot -->
+        <div id="dropzone" class="recorder-slot border-2 border-dashed border-panel-wire rounded-xl p-10 flex flex-col items-center justify-center cursor-pointer transition-colors duration-300 group">
+            <span class="corner corner-tl"></span>
+            <span class="corner corner-tr"></span>
+            <span class="corner corner-bl"></span>
+            <span class="corner corner-br"></span>
+
             <input type="file" id="fileInput" class="hidden" />
-            
-            <!-- Upload Icon with animate-bounce on hover -->
-            <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center border border-white/5 shadow-inner mb-4 group-hover:scale-110 group-hover:border-indigo-500/35 transition-all duration-300">
-                <svg class="w-7 h-7 text-indigo-400 group-hover:animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+
+            <div class="w-14 h-14 rounded-lg bg-panel-black flex items-center justify-center border border-panel-wire mb-4 group-hover:border-instrument-amber/50 transition-colors duration-300">
+                <svg class="w-6 h-6 text-instrument-amber" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                 </svg>
             </div>
-            
-            <p class="font-semibold text-lg text-slate-200 mb-1">
-                Drag and drop your file here
+
+            <p class="font-medium text-base text-fog mb-1">
+                Drag and drop your spec file here
             </p>
-            <p class="text-sm text-slate-400 mb-4">
-                or <span class="text-indigo-400 group-hover:underline font-medium">browse local files</span>
+            <p class="text-sm text-instrument-gray mb-4">
+                or <span class="text-instrument-amber group-hover:underline font-medium">browse local files</span>
             </p>
-            
-            <div class="flex items-center gap-4 text-xs text-slate-500 border-t border-white/5 pt-4 w-full justify-center">
-                <span>Maximum size: 50MB</span>
-                <span class="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
-                <span>All formats accepted</span>
+
+            <div class="flex items-center gap-4 console-label text-instrument-gray/70 border-t border-panel-wire pt-4 w-full justify-center">
+                <span>Max 50MB</span>
+                <span class="w-1 h-1 rounded-full bg-panel-wire"></span>
+                <span>JSON spec</span>
             </div>
         </div>
 
         <!-- File List / Upload Progress Area -->
         <div id="uploadProgressContainer" class="mt-6 hidden space-y-4">
-            <div class="h-px bg-white/5 my-4"></div>
-            <h3 class="text-sm font-semibold text-slate-300">Uploading Queue</h3>
-            
-            <!-- Progress Card -->
-            <div id="progressCard" class="flex items-center gap-4 p-4 rounded-xl bg-slate-950/40 border border-white/5">
-                <div class="p-2.5 rounded-lg bg-indigo-500/10 text-indigo-400">
+            <div class="h-px bg-panel-wire my-4"></div>
+            <h3 class="console-label text-instrument-gray">Uploading</h3>
+
+            <div id="progressCard" class="flex items-center gap-4 p-4 rounded-xl panel-inset">
+                <div class="p-2.5 rounded-lg bg-instrument-amber/10 text-instrument-amber">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
                 </div>
-                
+
                 <div class="flex-grow min-w-0">
                     <div class="flex justify-between text-sm mb-1">
-                        <span id="fileNameDisplay" class="font-medium text-slate-200 truncate">log_file_2026.log</span>
-                        <span id="progressPercentage" class="text-xs text-indigo-400 font-semibold">0%</span>
+                        <span id="fileNameDisplay" class="font-medium text-fog truncate font-mono text-xs"></span>
+                        <span id="progressPercentage" class="text-xs text-instrument-amber font-semibold">0%</span>
                     </div>
-                    
-                    <!-- Outer progress bar -->
-                    <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden">
-                        <div id="progressBar" class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-150" style="width: 0%"></div>
+
+                    <div class="w-full h-1.5 bg-panel-black rounded-full overflow-hidden">
+                        <div id="progressBar" class="h-full bg-instrument-amber rounded-full transition-all duration-150" style="width: 0%"></div>
                     </div>
                 </div>
             </div>
@@ -116,50 +140,49 @@
 
         <!-- Success/Error Notification -->
         <div id="notification" class="mt-6 hidden p-4 rounded-xl border flex items-start gap-3 transition-all duration-300">
-            <!-- Icon placeholder -->
             <div id="notificationIcon" class="mt-0.5"></div>
             <div>
-                <h4 id="notificationTitle" class="text-sm font-semibold">Upload Complete</h4>
-                <p id="notificationMessage" class="text-xs mt-0.5 text-slate-400"></p>
+                <h4 id="notificationTitle" class="text-sm font-semibold"></h4>
+                <p id="notificationMessage" class="text-xs mt-0.5 text-instrument-gray"></p>
             </div>
         </div>
 
         <!-- Pipeline Results Panel -->
         <div id="resultsPanel" class="mt-6 hidden">
-            <div class="h-px bg-white/5 my-4"></div>
+            <div class="h-px bg-panel-wire my-4"></div>
 
             <div class="flex justify-end mb-2">
-                <span id="rulesSourceBadge" class="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border border-white/10 text-slate-400"></span>
+                <span id="rulesSourceBadge" class="console-label px-2 py-0.5 rounded-full border border-panel-wire text-instrument-gray"></span>
             </div>
 
             <!-- Summary cards -->
             <div class="grid grid-cols-3 gap-3 mb-4">
-                <div class="p-3 rounded-lg bg-slate-950/40 border border-white/5 text-center">
-                    <div id="statTestCases" class="text-xl font-bold text-slate-100">0</div>
-                    <div class="text-[10px] text-slate-500 uppercase tracking-wide mt-1">Test Cases</div>
+                <div class="p-3 rounded-lg panel-inset text-center">
+                    <div id="statTestCases" class="text-xl font-display font-semibold text-fog">0</div>
+                    <div class="console-label text-instrument-gray mt-1">Test Cases</div>
                 </div>
-                <div class="p-3 rounded-lg bg-slate-950/40 border border-white/5 text-center">
-                    <div id="statErrors" class="text-xl font-bold text-rose-400">0</div>
-                    <div class="text-[10px] text-slate-500 uppercase tracking-wide mt-1">Rule Errors</div>
+                <div class="p-3 rounded-lg panel-inset text-center">
+                    <div id="statErrors" class="text-xl font-display font-semibold text-caution">0</div>
+                    <div class="console-label text-instrument-gray mt-1">Rule Errors</div>
                 </div>
-                <div class="p-3 rounded-lg bg-slate-950/40 border border-white/5 text-center">
-                    <div id="statWarnings" class="text-xl font-bold text-amber-400">0</div>
-                    <div class="text-[10px] text-slate-500 uppercase tracking-wide mt-1">Warnings</div>
+                <div class="p-3 rounded-lg panel-inset text-center">
+                    <div id="statWarnings" class="text-xl font-display font-semibold text-instrument-amber">0</div>
+                    <div class="console-label text-instrument-gray mt-1">Warnings</div>
                 </div>
             </div>
 
             <!-- AI summary -->
-            <div id="aiSummaryBox" class="p-4 rounded-lg bg-slate-950/40 border border-white/5 mb-4 hidden">
-                <h4 class="text-xs font-semibold text-indigo-400 uppercase tracking-wide mb-1.5">AI Analysis</h4>
-                <p id="aiSummaryText" class="text-sm text-slate-300 leading-relaxed"></p>
+            <div id="aiSummaryBox" class="p-4 rounded-lg panel-inset mb-4 hidden">
+                <h4 class="console-label text-phosphor mb-1.5">AI Analysis</h4>
+                <p id="aiSummaryText" class="text-sm text-fog leading-relaxed"></p>
             </div>
 
             <!-- Report downloads -->
             <div id="reportDownloads" class="flex gap-3 hidden">
-                <a id="downloadPdfLink" href="#" class="flex-1 text-center text-sm font-medium py-2.5 rounded-lg bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/25 transition-colors">
+                <a id="downloadPdfLink" href="#" class="flex-1 text-center text-sm font-medium py-2.5 rounded-lg bg-instrument-amber/10 text-instrument-amber border border-instrument-amber/30 hover:bg-instrument-amber/20 transition-colors">
                     Download PDF Report
                 </a>
-                <a id="downloadXlsxLink" href="#" class="flex-1 text-center text-sm font-medium py-2.5 rounded-lg bg-purple-500/15 text-purple-300 border border-purple-500/30 hover:bg-purple-500/25 transition-colors">
+                <a id="downloadXlsxLink" href="#" class="flex-1 text-center text-sm font-medium py-2.5 rounded-lg bg-phosphor/10 text-phosphor border border-phosphor/30 hover:bg-phosphor/20 transition-colors">
                     Download XLSX Report
                 </a>
             </div>

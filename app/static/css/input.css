@@ -4,46 +4,113 @@
 
 @layer base {
   body {
-    background-color: #020617; /* slate-950 */
-    background-image: radial-gradient(at 50% 0%, #1e1b4b 0%, #020617 70%); /* indigo shadow radial gradient */
+    background-color: #0A0D12;
+    background-image:
+      linear-gradient(rgba(231, 234, 240, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(231, 234, 240, 0.035) 1px, transparent 1px),
+      radial-gradient(at 50% 0%, rgba(242, 169, 59, 0.07) 0%, transparent 60%);
+    background-size: 40px 40px, 40px 40px, 100% 100%;
   }
 }
 
-/* Glassmorphism panel styling */
-.glass-panel {
-  background: rgba(15, 23, 42, 0.4);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+/* ---------------------------------------------------------------- */
+/* Panel: the graphite instrument-cluster surface used everywhere    */
+/* ---------------------------------------------------------------- */
+.panel {
+  background: rgba(21, 26, 34, 0.72);
+  border: 1px solid theme('colors.panel.wire');
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.45);
 }
 
-/* Blob Animation Keyframes */
-@keyframes blob {
-  0% {
-    transform: translate(0px, 0px) scale(1);
-  }
-  33% {
-    transform: translate(30px, -50px) scale(1.1);
-  }
-  66% {
-    transform: translate(-20px, 20px) scale(0.9);
-  }
-  100% {
-    transform: translate(0px, 0px) scale(1);
-  }
+.panel-inset {
+  background: rgba(10, 13, 18, 0.6);
+  border: 1px solid theme('colors.panel.wire');
 }
 
-.animate-blob {
-  animation: blob 7s infinite alternate;
+/* Eyebrow label: small caps console-style tag */
+.console-label {
+  font-family: theme('fontFamily.mono');
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 0.6875rem;
 }
 
-.animation-delay-2000 {
-  animation-delay: 2s;
+/* ---------------------------------------------------------------- */
+/* Annunciator lamps                                                  */
+/* ---------------------------------------------------------------- */
+.lamp-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: theme('colors.panel.wire');
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-.animation-delay-4000 {
-  animation-delay: 4s;
+.lamp-dot.is-active {
+  background: theme('colors.instrument.amber');
+  box-shadow: 0 0 10px 2px rgba(242, 169, 59, 0.65);
+  animation: lamp-pulse 1.1s ease-in-out infinite;
 }
+
+.lamp-dot.is-pass {
+  background: theme('colors.phosphor');
+  box-shadow: 0 0 8px 1px rgba(52, 211, 153, 0.55);
+  animation: none;
+}
+
+.lamp-dot.is-fail {
+  background: theme('colors.caution');
+  box-shadow: 0 0 8px 1px rgba(242, 84, 91, 0.55);
+  animation: none;
+}
+
+@keyframes lamp-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+/* System-nominal indicator in the header */
+.status-dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 9999px;
+  background: theme('colors.phosphor');
+  box-shadow: 0 0 6px 1px rgba(52, 211, 153, 0.6);
+  animation: status-breathe 2.6s ease-in-out infinite;
+}
+
+@keyframes status-breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+/* ---------------------------------------------------------------- */
+/* Flight-recorder dropzone: viewfinder-style corner brackets        */
+/* ---------------------------------------------------------------- */
+.recorder-slot {
+  position: relative;
+  background: rgba(10, 13, 18, 0.5);
+}
+
+.recorder-slot .corner {
+  position: absolute;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-color: theme('colors.panel.wire');
+  transition: border-color 0.25s ease;
+}
+
+.recorder-slot:hover .corner,
+.recorder-slot.is-dragging .corner {
+  border-color: theme('colors.instrument.amber');
+}
+
+.corner-tl { top: 0.65rem; left: 0.65rem; border-top: 2px solid; border-left: 2px solid; }
+.corner-tr { top: 0.65rem; right: 0.65rem; border-top: 2px solid; border-right: 2px solid; }
+.corner-bl { bottom: 0.65rem; left: 0.65rem; border-bottom: 2px solid; border-left: 2px solid; }
+.corner-br { bottom: 0.65rem; right: 0.65rem; border-bottom: 2px solid; border-right: 2px solid; }
 
 /* Fade in for the main card */
 @keyframes fadeIn {
