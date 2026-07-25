@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="w-full max-w-2xl animate-fade-in">
+    <div class="text-center mb-8">
+        <h1 class="font-outfit font-extrabold text-4xl md:text-5xl tracking-tight mb-3">
+            Server
+            <span class="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">configuration</span>
+        </h1>
+        <p class="text-slate-400 max-w-md mx-auto text-base">
+            This reflects the values the app is currently running with, read live from environment variables.
+            There's no account system, so nothing here is stored per-user or editable from the browser.
+        </p>
+    </div>
+
+    <div class="glass-panel p-8 rounded-2xl border border-white/10 relative overflow-hidden space-y-6">
+        <div class="absolute -right-16 -top-16 w-32 h-32 rounded-full bg-indigo-500/10 blur-2xl pointer-events-none"></div>
+
+        <!-- Environment -->
+        <div>
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Environment</h3>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="p-4 rounded-xl bg-slate-950/40 border border-white/5">
+                    <p class="text-xs text-slate-500 mb-1">Mode</p>
+                    <p class="text-sm font-medium text-slate-200 capitalize">{{ environment }}</p>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-950/40 border border-white/5">
+                    <p class="text-xs text-slate-500 mb-1">Debug</p>
+                    <p class="text-sm font-medium {{ 'text-amber-400' if debug else 'text-emerald-400' }}">
+                        {{ "Enabled" if debug else "Disabled" }}
+                    </p>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-950/40 border border-white/5">
+                    <p class="text-xs text-slate-500 mb-1">App version</p>
+                    <p class="text-sm font-medium text-slate-200">v{{ app_version }}</p>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-950/40 border border-white/5">
+                    <p class="text-xs text-slate-500 mb-1">API prefix</p>
+                    <p class="text-sm font-medium text-slate-200 font-mono">{{ api_prefix }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="h-px bg-white/5"></div>
+
+        <!-- Upload limits -->
+        <div>
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Upload limits</h3>
+            <div class="p-4 rounded-xl bg-slate-950/40 border border-white/5 mb-3">
+                <p class="text-xs text-slate-500 mb-1">Maximum file size</p>
+                <p class="text-sm font-medium text-slate-200">{{ max_file_size_mb }} MB</p>
+            </div>
+            <div class="p-4 rounded-xl bg-slate-950/40 border border-white/5">
+                <p class="text-xs text-slate-500 mb-2">Allowed extensions</p>
+                <div class="flex flex-wrap gap-2">
+                    {% for ext in allowed_extensions %}
+                    <span class="px-2.5 py-1 rounded-md bg-indigo-500/10 text-indigo-300 text-xs font-mono border border-indigo-500/20">{{ ext }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="h-px bg-white/5"></div>
+
+        <!-- AI + Storage -->
+        <div>
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">AI &amp; storage</h3>
+            <div class="space-y-3">
+                <div class="p-4 rounded-xl bg-slate-950/40 border border-white/5 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-slate-500 mb-1">Gemini model</p>
+                        <p class="text-sm font-medium text-slate-200">{{ gemini_model }}</p>
+                    </div>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-950/40 border border-white/5 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-slate-500 mb-1">Gemini API key</p>
+                        <p class="text-sm font-medium text-slate-200 font-mono">{{ gemini_key_display }}</p>
+                    </div>
+                    {% if gemini_key_display == "Not configured" %}
+                    <span class="px-2.5 py-1 rounded-md bg-rose-500/10 text-rose-300 text-xs border border-rose-500/20">Missing</span>
+                    {% else %}
+                    <span class="px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-300 text-xs border border-emerald-500/20">Set</span>
+                    {% endif %}
+                </div>
+                <div class="p-4 rounded-xl bg-slate-950/40 border border-white/5">
+                    <p class="text-xs text-slate-500 mb-1">Workspace storage root</p>
+                    <p class="text-sm font-medium text-slate-200 font-mono break-all">{{ storage_path }}</p>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-950/40 border border-white/5">
+                    <p class="text-xs text-slate-500 mb-1">Workspace retention</p>
+                    <p class="text-sm font-medium text-slate-200">{{ workspace_retention_days }} days</p>
+                </div>
+            </div>
+        </div>
+
+        {% if gemini_key_display == "Not configured" %}
+        <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300">
+            No Gemini API key detected. Add <span class="font-mono">GEMINI_API_KEY</span> to your <span class="font-mono">.env</span> file to enable AI analysis.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

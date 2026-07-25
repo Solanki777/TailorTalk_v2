@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showNotification('error', 'Upload Failed', 'Network error or connection lost.');
         });
 
-        xhr.open('POST', '/api/upload');
+        xhr.open('POST', '/api/v1/upload');
         xhr.send(formData);
     }
 

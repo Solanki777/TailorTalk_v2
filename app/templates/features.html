@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="w-full max-w-5xl animate-fade-in">
+    <div class="text-center mb-12">
+        <h1 class="font-outfit font-extrabold text-4xl md:text-5xl tracking-tight mb-3">
+            One upload,
+            <span class="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">five stages</span>
+            of validation
+        </h1>
+        <p class="text-slate-400 max-w-lg mx-auto text-base">
+            Every file that comes through the workspace moves through the same pipeline, in the same order —
+            nothing is skipped, and every stage leaves an artifact behind for you to inspect.
+        </p>
+    </div>
+
+    <!-- Pipeline: order is real here, so it's numbered as a sequence -->
+    <div class="relative">
+        <!-- Connecting line (desktop only) -->
+        <div class="hidden md:block absolute top-10 left-[10%] right-[10%] h-px bg-gradient-to-r from-indigo-500/40 via-purple-500/40 to-pink-500/40"></div>
+
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-6 md:gap-4">
+
+            <!-- Stage 1 -->
+            <div class="glass-panel relative p-5 rounded-2xl border border-white/10 flex flex-col items-center text-center">
+                <div class="w-12 h-12 rounded-full bg-slate-900 border border-indigo-500/30 flex items-center justify-center mb-4 relative z-10">
+                    <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                </div>
+                <span class="text-xs font-semibold text-indigo-400 mb-1">Stage 1</span>
+                <h3 class="font-outfit font-semibold text-slate-100 mb-1">Upload</h3>
+                <p class="text-xs text-slate-400">A new workspace is created and your file is stored as <code class="text-slate-300">spec.json</code>.</p>
+            </div>
+
+            <!-- Stage 2 -->
+            <div class="glass-panel relative p-5 rounded-2xl border border-white/10 flex flex-col items-center text-center">
+                <div class="w-12 h-12 rounded-full bg-slate-900 border border-purple-500/30 flex items-center justify-center mb-4 relative z-10">
+                    <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>
+                </div>
+                <span class="text-xs font-semibold text-purple-400 mb-1">Stage 2</span>
+                <h3 class="font-outfit font-semibold text-slate-100 mb-1">Parse</h3>
+                <p class="text-xs text-slate-400">Structure is extracted and normalized into <code class="text-slate-300">parsed.json</code>.</p>
+            </div>
+
+            <!-- Stage 3 -->
+            <div class="glass-panel relative p-5 rounded-2xl border border-white/10 flex flex-col items-center text-center">
+                <div class="w-12 h-12 rounded-full bg-slate-900 border border-fuchsia-500/30 flex items-center justify-center mb-4 relative z-10">
+                    <svg class="w-5 h-5 text-fuchsia-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <span class="text-xs font-semibold text-fuchsia-400 mb-1">Stage 3</span>
+                <h3 class="font-outfit font-semibold text-slate-100 mb-1">Rule Engine</h3>
+                <p class="text-xs text-slate-400">Deterministic checks run first, written to <code class="text-slate-300">rule_engine.json</code>.</p>
+            </div>
+
+            <!-- Stage 4 -->
+            <div class="glass-panel relative p-5 rounded-2xl border border-white/10 flex flex-col items-center text-center">
+                <div class="w-12 h-12 rounded-full bg-slate-900 border border-pink-500/30 flex items-center justify-center mb-4 relative z-10">
+                    <svg class="w-5 h-5 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                </div>
+                <span class="text-xs font-semibold text-pink-400 mb-1">Stage 4</span>
+                <h3 class="font-outfit font-semibold text-slate-100 mb-1">AI Analysis</h3>
+                <p class="text-xs text-slate-400">Gemini reviews what the rule engine can't, saved to <code class="text-slate-300">ai_analysis.json</code>.</p>
+            </div>
+
+            <!-- Stage 5 -->
+            <div class="glass-panel relative p-5 rounded-2xl border border-white/10 flex flex-col items-center text-center">
+                <div class="w-12 h-12 rounded-full bg-slate-900 border border-rose-500/30 flex items-center justify-center mb-4 relative z-10">
+                    <svg class="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17h6m-6-4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                </div>
+                <span class="text-xs font-semibold text-rose-400 mb-1">Stage 5</span>
+                <h3 class="font-outfit font-semibold text-slate-100 mb-1">Report</h3>
+                <p class="text-xs text-slate-400">Findings are compiled into <code class="text-slate-300">report.pdf</code> and <code class="text-slate-300">.xlsx</code>.</p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Why it's built this way -->
+    <div class="glass-panel mt-10 p-8 rounded-2xl border border-white/10 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div>
+            <h4 class="font-outfit font-semibold text-slate-100 mb-1.5">Every stage is inspectable</h4>
+            <p class="text-sm text-slate-400">Each workspace keeps its own JSON artifact per stage, so you can see exactly what changed and when.</p>
+        </div>
+        <div>
+            <h4 class="font-outfit font-semibold text-slate-100 mb-1.5">Rules before AI</h4>
+            <p class="text-sm text-slate-400">Deterministic checks run first — the model is only asked to reason about what rules alone can't catch.</p>
+        </div>
+        <div>
+            <h4 class="font-outfit font-semibold text-slate-100 mb-1.5">Two report formats</h4>
+            <p class="text-sm text-slate-400">Every run produces both a shareable PDF and a spreadsheet you can filter, sort, or hand off.</p>
+        </div>
+    </div>
+
+    <div class="text-center mt-10">
+        <a href="/" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-medium text-sm hover:opacity-90 transition-opacity">
+            Start a workspace
+        </a>
+    </div>
+</div>
+{% endblock %}
