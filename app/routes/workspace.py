@@ -1,4 +1,4 @@
-from fastapi import APIRouter, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
 
 from app.config import settings
@@ -9,10 +9,21 @@ router = APIRouter(prefix="/workspaces", tags=["workspaces"])
 
 
 @router.post("", response_model=WorkspaceResponse)
-async def create_workspace(file: UploadFile = File(...)):
+async def create_workspace(
+    file: UploadFile = File(...),
+    custom_rules: str | None = Form(None),
+    rules_file: UploadFile | None = File(None),
+):
     """
     Upload a test spec and run it through the full pipeline:
     Parse -> Rule Engine -> AI Analysis -> Report.
+
+    The Rule Engine stage uses the built-in predefined checks by
+    default. To use your own test cases/rules instead, send either:
+      - `rules_file`: a JSON file of custom rules, or
+      - `custom_rules`: the same JSON pasted directly as form text
+    If both are sent, `rules_file` wins. If neither is sent, the
+    default predefined rule engine runs, same as before.
 
     Always returns 200 with a WorkspaceResponse — if a stage fails,
     `status` will be "failed" and `error` will explain why, rather
@@ -24,7 +35,14 @@ async def create_workspace(file: UploadFile = File(...)):
             detail="File must have a non-empty name.",
         )
 
-    result = await run_pipeline(file)
+    custom_rules_text: str | None = None
+    if rules_file is not None and rules_file.filename:
+        rules_bytes = await rules_file.read()
+        custom_rules_text = rules_bytes.decode("utf-8", errors="replace")
+    elif custom_rules and custom_rules.strip():
+        custom_rules_text = custom_rules
+
+    result = await run_pipeline(file, custom_rules_text)
     return result
 
 

@@ -35,6 +35,7 @@ from app.models.workspace import (
     WorkspaceStatus,
 )
 from app.parser.spec_parser import SpecParseError, parse_spec_text
+from app.services.custom_rule_engine import CustomRuleParseError, parse_custom_rules, run_custom_rule_engine
 from app.services.report_service import generate_pdf_report, generate_xlsx_report
 from app.services.rule_engine import run_rule_engine
 
@@ -43,8 +44,14 @@ logger = logging.getLogger("testpilot.pipeline")
 MAX_READ_BYTES = 1024 * 1024  # 1MB chunks, matches existing upload pattern
 
 
-async def run_pipeline(upload_file: UploadFile) -> WorkspaceResponse:
-    """Run the full pipeline for a freshly uploaded file and return the result."""
+async def run_pipeline(upload_file: UploadFile, custom_rules_text: str | None = None) -> WorkspaceResponse:
+    """Run the full pipeline for a freshly uploaded file and return the result.
+
+    If `custom_rules_text` is provided (non-empty), it's parsed as a
+    user-defined `CustomRuleSet` and used *instead of* the built-in rule
+    engine for the Rule Engine stage. If it's absent/blank, the default
+    predefined checks in `rule_engine.py` are used, same as before.
+    """
     workspace_id = uuid.uuid4().hex
     workspace_dir = settings.ensure_workspace(workspace_id)
     original_filename = Path(upload_file.filename or "spec.json").name
@@ -86,8 +93,23 @@ async def run_pipeline(upload_file: UploadFile) -> WorkspaceResponse:
 
     (workspace_dir / "parsed.json").write_text(spec.model_dump_json(indent=2), encoding="utf-8")
 
-    # --- Stage: Rule Engine ------------------------------------------------
-    rule_result: RuleEngineResult = run_rule_engine(spec)
+    # --- Stage: Rule Engine (custom, if supplied, else default predefined) --
+    if custom_rules_text and custom_rules_text.strip():
+        try:
+            rule_set = parse_custom_rules(custom_rules_text)
+        except CustomRuleParseError as exc:
+            logger.info("Custom rules failed to parse for workspace %s: %s", workspace_id, exc)
+            return WorkspaceResponse(
+                workspace_id=workspace_id,
+                status=WorkspaceStatus.FAILED,
+                original_filename=original_filename,
+                spec=spec,
+                error=f"Custom rules error: {exc}",
+            )
+        rule_result: RuleEngineResult = run_custom_rule_engine(spec, rule_set)
+    else:
+        rule_result = run_rule_engine(spec)
+
     (workspace_dir / "rule_engine.json").write_text(
         rule_result.model_dump_json(indent=2), encoding="utf-8"
     )

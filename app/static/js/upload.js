@@ -20,6 +20,51 @@ document.addEventListener('DOMContentLoaded', () => {
     const reportDownloads = document.getElementById('reportDownloads');
     const downloadPdfLink = document.getElementById('downloadPdfLink');
     const downloadXlsxLink = document.getElementById('downloadXlsxLink');
+    const rulesSourceBadge = document.getElementById('rulesSourceBadge');
+
+    // Custom test cases / rules UI
+    const rulesModeDefault = document.getElementById('rulesModeDefault');
+    const rulesModeCustom = document.getElementById('rulesModeCustom');
+    const customRulesPanel = document.getElementById('customRulesPanel');
+    const rulesFileInput = document.getElementById('rulesFileInput');
+    const customRulesTextarea = document.getElementById('customRulesTextarea');
+    const customRulesError = document.getElementById('customRulesError');
+    const loadExampleRulesBtn = document.getElementById('loadExampleRulesBtn');
+
+    const EXAMPLE_RULES = {
+        rules: [
+            { field: "method", type: "required", severity: "error", message: "Every test case needs an HTTP method." },
+            { field: "expected_status", type: "range", min: 100, max: 599, severity: "error" },
+            { field: "endpoint", type: "starts_with", value: "/", severity: "warning" },
+            { field: "headers.Authorization", type: "required", severity: "info", message: "Consider testing with an Authorization header." }
+        ]
+    };
+
+    function toggleRulesMode() {
+        const isCustom = rulesModeCustom.checked;
+        customRulesPanel.classList.toggle('hidden', !isCustom);
+        customRulesError.classList.add('hidden');
+    }
+
+    rulesModeDefault.addEventListener('change', toggleRulesMode);
+    rulesModeCustom.addEventListener('change', toggleRulesMode);
+
+    loadExampleRulesBtn.addEventListener('click', () => {
+        customRulesTextarea.value = JSON.stringify(EXAMPLE_RULES, null, 2);
+    });
+
+    // Uploading a rules file populates the textarea (the textarea is what
+    // actually gets submitted, so pasted/edited text and an uploaded file
+    // both flow through the same field).
+    rulesFileInput.addEventListener('change', (e) => {
+        const rulesFile = e.target.files[0];
+        if (!rulesFile) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            customRulesTextarea.value = ev.target.result;
+        };
+        reader.readAsText(rulesFile);
+    });
 
     // Trigger click on input when clicking dropzone
     dropzone.addEventListener('click', () => fileInput.click());
@@ -80,6 +125,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleFileUpload(file) {
+        // If "my own test cases" is selected, the custom rules JSON must be
+        // present and valid before we even start the upload.
+        customRulesError.classList.add('hidden');
+        let customRulesJson = null;
+        if (rulesModeCustom.checked) {
+            const rawRules = customRulesTextarea.value.trim();
+            if (!rawRules) {
+                customRulesError.textContent = 'Paste your rules JSON or upload a rules file, or switch back to "Default test cases".';
+                customRulesError.classList.remove('hidden');
+                return;
+            }
+            try {
+                JSON.parse(rawRules);
+                customRulesJson = rawRules;
+            } catch (e) {
+                customRulesError.textContent = 'Custom rules is not valid JSON: ' + e.message;
+                customRulesError.classList.remove('hidden');
+                return;
+            }
+        }
+
         // Reset states
         progressContainer.classList.remove('hidden');
         notification.classList.add('hidden');
@@ -97,6 +163,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const xhr = new XMLHttpRequest();
         const formData = new FormData();
         formData.append('file', file);
+        if (customRulesJson) {
+            formData.append('custom_rules', customRulesJson);
+        }
 
         xhr.upload.addEventListener('progress', (e) => {
             if (e.lengthComputable) {
@@ -149,6 +218,12 @@ document.addEventListener('DOMContentLoaded', () => {
         statTestCases.textContent = spec.test_cases ? spec.test_cases.length : 0;
         statErrors.textContent = ruleEngine.error_count || 0;
         statWarnings.textContent = ruleEngine.warning_count || 0;
+
+        const source = ruleEngine.source || 'default';
+        rulesSourceBadge.textContent = source === 'custom' ? 'Custom rules' : 'Default rules';
+        rulesSourceBadge.className = source === 'custom'
+            ? 'text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-300'
+            : 'text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border border-white/10 text-slate-400';
 
         if (aiAnalysis && aiAnalysis.summary) {
             aiSummaryText.textContent = aiAnalysis.summary;

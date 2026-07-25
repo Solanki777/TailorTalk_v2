@@ -63,6 +63,53 @@ class RuleEngineResult(BaseModel):
     error_count: int = 0
     warning_count: int = 0
     info_count: int = 0
+    source: str = "default"  # "default" (built-in checks) or "custom" (user-supplied rules)
+
+
+# ---------------------------------------------------------------------
+# Stage 3b: Custom (user-supplied) Rules
+# ---------------------------------------------------------------------
+class CustomRuleType(str, Enum):
+    REQUIRED = "required"
+    NOT_EMPTY = "not_empty"
+    EQUALS = "equals"
+    NOT_EQUALS = "not_equals"
+    IN = "in"
+    NOT_IN = "not_in"
+    STARTS_WITH = "starts_with"
+    ENDS_WITH = "ends_with"
+    CONTAINS = "contains"
+    REGEX = "regex"
+    MIN = "min"
+    MAX = "max"
+    RANGE = "range"
+
+
+class CustomRule(BaseModel):
+    """
+    One user-defined check, applied to every test case in the uploaded spec.
+
+    `field` supports dot-notation into a test case's dict-valued fields,
+    e.g. "headers.Authorization" or "request_body.user_id". Top-level
+    fields are: id, name, method, endpoint, request_body, headers,
+    expected_status, expected_response.
+    """
+
+    field: str
+    type: CustomRuleType
+    value: Any = None
+    values: Optional[list[Any]] = None
+    min: Optional[float] = None
+    max: Optional[float] = None
+    severity: Severity = Severity.WARNING
+    message: Optional[str] = None
+    rule_id: Optional[str] = Field(default=None, alias="id")
+
+    model_config = {"populate_by_name": True}
+
+
+class CustomRuleSet(BaseModel):
+    rules: list[CustomRule] = Field(default_factory=list)
 
 
 # ---------------------------------------------------------------------
