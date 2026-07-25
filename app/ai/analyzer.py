@@ -90,8 +90,39 @@ def analyze_with_gemini(spec: TestSpec, rule_result: RuleEngineResult) -> AIAnal
         logger.exception("Gemini AI analysis failed")
         return AIAnalysisResult(
             summary="AI analysis could not be completed due to an error.",
-            skipped_reason=f"{type(exc).__name__}: {exc}",
+            skipped_reason=_summarize_error(exc),
         )
+
+
+def _summarize_error(exc: Exception) -> str:
+    """Turn a raw Gemini/SDK exception into one short, human-readable line.
+
+    The google-genai SDK raises errors whose str() is a giant Python dict
+    dump (great for logs, unreadable in a report). This picks out just the
+    HTTP status + message when available and falls back to a trimmed
+    generic message otherwise.
+    """
+    text = str(exc)
+
+    if "RESOURCE_EXHAUSTED" in text or "429" in text:
+        if "limit: 0" in text or "'limit': 0" in text:
+            return (
+                "Gemini API quota is locked at 0 for this key's project. "
+                "This usually means the Google Cloud project needs a billing "
+                "account linked to unlock the free usage tier — see "
+                "https://ai.google.dev/gemini-api/docs/rate-limits."
+            )
+        return (
+            "Gemini API rate limit reached for this key. Wait a bit and "
+            "retry, or check your usage at https://ai.dev/rate-limit."
+        )
+
+    if "API_KEY_INVALID" in text or "401" in text or "PERMISSION_DENIED" in text:
+        return "Gemini API key was rejected (invalid or missing permissions)."
+
+    # Generic fallback: first line only, capped so it can't blow up a report.
+    first_line = text.strip().splitlines()[0] if text.strip() else type(exc).__name__
+    return first_line[:200]
 
 
 def _strip_markdown_fences(text: str) -> str:
