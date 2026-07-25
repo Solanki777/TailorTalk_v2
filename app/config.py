@@ -77,6 +77,7 @@ class Settings(BaseSettings):
     # Security & external API keys
     # ------------------------------------------------------------------
     GEMINI_API_KEY: str = ""
+    GROQ_API_KEY: str = ""
 
     # ------------------------------------------------------------------
     # CORS (kept permissive for hackathon use; tighten for real prod)
@@ -99,6 +100,7 @@ class Settings(BaseSettings):
     # Future-ready settings (safe defaults, not wired up yet)
     # ------------------------------------------------------------------
     GEMINI_MODEL: str = "gemini-2.0-flash"
+    GROQ_MODEL: str = "llama-3.3-70b-versatile"
     REQUEST_TIMEOUT_SECONDS: int = 60
     WORKSPACE_RETENTION_DAYS: int = 7
 
