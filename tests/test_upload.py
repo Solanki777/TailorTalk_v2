@@ -1,14 +1,11 @@
 """Tests for POST /api/v1/upload — file validation and storage."""
 
-import io
 from pathlib import Path
-
-from tests.conftest import make_upload_file
 
 UPLOAD_URL = "/api/v1/upload"
 
 
-def test_upload_valid_file_succeeds(client):
+def test_upload_valid_file_succeeds(client, make_upload_file):
     content = b'{"scenario": "valid upload"}'
     response = client.post(UPLOAD_URL, files=[make_upload_file("spec.json", content)])
 
@@ -19,7 +16,7 @@ def test_upload_valid_file_succeeds(client):
     assert body["file_size"] == len(content)
 
 
-def test_upload_writes_file_to_disk(client, tmp_path):
+def test_upload_writes_file_to_disk(client, make_upload_file, tmp_path):
     content = b"hello workspace"
     response = client.post(UPLOAD_URL, files=[make_upload_file("note.txt", content, "text/plain")])
 
@@ -29,7 +26,7 @@ def test_upload_writes_file_to_disk(client, tmp_path):
     assert saved_path.parent == tmp_path
 
 
-def test_upload_generates_unique_filename_on_disk(client):
+def test_upload_generates_unique_filename_on_disk(client, make_upload_file):
     """The original name is preserved for display, but the file on disk is prefixed with a UUID."""
     response = client.post(UPLOAD_URL, files=[make_upload_file("report.json", b"{}")])
 
@@ -44,14 +41,14 @@ def test_upload_without_a_file_is_rejected(client):
     assert response.status_code == 422  # FastAPI request-validation error
 
 
-def test_upload_empty_file_is_rejected(client):
+def test_upload_empty_file_is_rejected(client, make_upload_file):
     response = client.post(UPLOAD_URL, files=[make_upload_file("empty.json", b"")])
 
     assert response.status_code == 400
     assert "empty" in response.json()["detail"].lower()
 
 
-def test_upload_oversized_file_is_rejected(client, restore_file_validator):
+def test_upload_oversized_file_is_rejected(client, make_upload_file, restore_file_validator):
     from app.utilities.file_validation import file_validator
 
     file_validator.max_size_bytes = 10  # shrink the limit for this test only
@@ -62,14 +59,14 @@ def test_upload_oversized_file_is_rejected(client, restore_file_validator):
     assert "exceeds" in response.json()["detail"].lower()
 
 
-def test_upload_two_files_get_two_distinct_storage_paths(client):
+def test_upload_two_files_get_two_distinct_storage_paths(client, make_upload_file):
     first = client.post(UPLOAD_URL, files=[make_upload_file("same-name.json", b"one")])
     second = client.post(UPLOAD_URL, files=[make_upload_file("same-name.json", b"two")])
 
     assert first.json()["saved_path"] != second.json()["saved_path"]
 
 
-def test_upload_reports_correct_content_length(client):
+def test_upload_reports_correct_content_length(client, make_upload_file):
     content = b"x" * 2048
     response = client.post(UPLOAD_URL, files=[make_upload_file("mid.json", content)])
 

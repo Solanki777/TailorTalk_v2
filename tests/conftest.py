@@ -42,6 +42,18 @@ def restore_file_validator() -> Iterator[None]:
     file_validator.max_size_bytes = original_limit
 
 
-def make_upload_file(name: str, content: bytes, content_type: str = "application/json"):
-    """Build a (fieldname, (filename, file-like, content_type)) tuple for `files=`."""
-    return "file", (name, io.BytesIO(content), content_type)
+@pytest.fixture()
+def make_upload_file():
+    """
+    Return a factory for building `files=` tuples for TestClient uploads.
+
+    Exposed as a fixture (rather than a plain importable function) so test
+    modules never need `from tests.conftest import ...` — pytest discovers
+    conftest.py automatically. This avoids collisions with any other
+    package named "tests" that might already be installed globally.
+    """
+
+    def _make(name: str, content: bytes, content_type: str = "application/json"):
+        return "file", (name, io.BytesIO(content), content_type)
+
+    return _make
