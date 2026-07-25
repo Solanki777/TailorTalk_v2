@@ -15,7 +15,3 @@ services:
         value: "False"
       - key: GEMINI_API_KEY
         sync: false
-    disk:
-      name: testpilot-storage
-      mountPath: /opt/render/project/src/storage
-      sizeGB: 1
