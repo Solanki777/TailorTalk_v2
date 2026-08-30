@@ -16,6 +16,6 @@ def home():
 
 app.include_router(
     chat_router,
-    prefix ="api/v1"
+    prefix ="/api/v1"
 
 )
