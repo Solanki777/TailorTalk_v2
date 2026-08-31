@@ -3,16 +3,11 @@ from backend.schemas.chat import ChatRequest
 from backend.services.chat_service import Chatservice
 
 router = APIRouter()
-
-# @router.post("/chat")
-# def chat(request :ChatRequest):
-#     return {
-#     "message" : f"you said:{request.message} "
-#     }
+serv = Chatservice()
 
 @router.post("/chat")
 def chat(request : ChatRequest):
-    res = Chatservice.process_message(request.message)
+    res = serv.process_message(request.message)
 
     return {
         "message" : res
