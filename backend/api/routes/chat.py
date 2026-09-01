@@ -6,10 +6,10 @@ router = APIRouter()
 serv = Chatservice()
 
 @router.post("/chat")
-def chat(request : ChatRequest):
+def chat(request: ChatRequest):
     res = serv.process_message(request.message)
 
     return {
-        "message" : res
+        "files": res
     }
     
