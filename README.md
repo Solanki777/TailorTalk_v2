@@ -1,3 +1,9 @@
+uvicorn backend.main:app --reload
+
+
+
+
+
 # 📁 Tailortalk
 
 ### *Next-Generation Conversational Intelligence for Google Drive Retrieval*

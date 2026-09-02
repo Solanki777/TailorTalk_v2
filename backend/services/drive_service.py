@@ -55,3 +55,14 @@ class DriveService:
         ).execute()
 
         return results.get("files", [])
+
+    def search_files(self,query):
+        service = self.authenticate()
+
+        results = service.files().list(
+            q = query,
+            pageSize = 10 ,
+            fields = "files(id,name,mimeType)"
+        ).execute()
+
+        return results.get("files",[])
