@@ -1,22 +1,15 @@
-from backend.schemas.search import SearchIntent
-from backend.services.query_builder import QueryBuilder
+from backend.services.llm.groq import GroqProvider
 
 
 class Chatservice:
 
     def __init__(self):
-        self.query_builder = QueryBuilder()
+        self.llm = GroqProvider()
 
     def process_message(self, message):
 
-        intent = SearchIntent(
-            name="project",
-            file_type="pdf"
-        )
-
-        query = self.query_builder.build(intent)
+        response = self.llm.generate(message)
 
         return {
-            "intent": intent,
-            "query": query
+            "response": response
         }
