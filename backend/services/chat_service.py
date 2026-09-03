@@ -1,4 +1,5 @@
 from backend.services.drive_service import DriveService
+from backend.schemas.search import SearchIntent
 
 
 class Chatservice:
@@ -6,13 +7,11 @@ class Chatservice:
     def __init__(self):
         self.drive_service = DriveService()
 
-    # def process_message(self, message):
-    #     files = self.drive_service.list_files()
-
-    #     return files
     def process_message(self, message):
-        files = self.drive_service.search_files(
-            "mimeType = 'application/pdf'"
+
+        intent = SearchIntent(
+            name="project",
+            file_type="pdf"
         )
 
-        return files
+        return intent
