@@ -1,11 +1,11 @@
-from backend.services.drive_service import DriveService
 from backend.schemas.search import SearchIntent
+from backend.services.query_builder import QueryBuilder
 
 
 class Chatservice:
 
     def __init__(self):
-        self.drive_service = DriveService()
+        self.query_builder = QueryBuilder()
 
     def process_message(self, message):
 
@@ -14,4 +14,9 @@ class Chatservice:
             file_type="pdf"
         )
 
-        return intent
+        query = self.query_builder.build(intent)
+
+        return {
+            "intent": intent,
+            "query": query
+        }
