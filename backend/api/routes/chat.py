@@ -9,7 +9,5 @@ serv = Chatservice()
 def chat(request: ChatRequest):
     res = serv.process_message(request.message)
 
-    return {
-        "files": res
-    }
+    return res
     

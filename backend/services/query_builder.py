@@ -12,6 +12,9 @@ class QueryBuilder:
                 f"name contains '{intent.name}'"
             )
 
+        if intent.owner == "me":
+            conditions.append("'me' in owners")
+
         if intent.file_type == "pdf":
             conditions.append(
                 "mimeType = 'application/pdf'"
