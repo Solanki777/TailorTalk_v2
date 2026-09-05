@@ -8,8 +8,8 @@ class Chatservice:
 
     def process_message(self, message):
 
-        response = self.llm.generate(message)
+        intent = self.llm.extract_search_intent(message)
 
         return {
-            "response": response
+            "intent": intent
         }
