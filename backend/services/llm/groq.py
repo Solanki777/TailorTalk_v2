@@ -1,24 +1,10 @@
-from groq import Groq
-
-from backend.config import GROQ_API_KEY
-from backend.services.llm.base import LLMProvider
+from pydantic import BaseModel
+from typing import Optional
 
 
-class GroqProvider(LLMProvider):
-
-    def __init__(self):
-        self.client = Groq(api_key=GROQ_API_KEY)
-
-    def generate(self, prompt: str):
-
-        response = self.client.chat.completions.create(
-            model="openai/gpt-oss-120b",
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ]
-        )
-
-        return response.choices[0].message.content
+class SearchIntent(BaseModel):
+    name: Optional[str] = None
+    file_type: Optional[str] = None
+    owner: Optional[str] = None
+    created_after: Optional[str] = None
+    created_before: Optional[str] = None
