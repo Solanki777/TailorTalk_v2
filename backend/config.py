@@ -7,3 +7,4 @@ load_dotenv()
 APP_NAME = os.getenv("APP_NAME", "TailorTalk")
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+MAX_HISTORY_TOKENS = 16000
