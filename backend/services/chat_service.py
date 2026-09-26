@@ -1,6 +1,7 @@
 from backend.services.llm.groq import GroqProvider
 from backend.services.query_builder import QueryBuilder
 from backend.services.drive_service import DriveService
+from backend.utils.history_manager import trim_history
 
 
 class Chatservice:
@@ -11,6 +12,7 @@ class Chatservice:
         self.drive_service = DriveService()
 
     def process_message(self, message, history=None):
+        history = trim_history(history or [])
 
         intent = self.llm.extract_search_intent(
     message,
