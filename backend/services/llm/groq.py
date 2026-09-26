@@ -12,42 +12,51 @@ class GroqProvider(LLMProvider):
     def __init__(self):
         self.client = Groq(api_key=GROQ_API_KEY)
 
-    def extract_search_intent(self, message: str) -> SearchIntent:
+    def extract_search_intent(
+    self,
+    message: str,
+    history: list = None
+) -> SearchIntent:
 
-        prompt = f"""
-You are a Google Drive search intent extractor.
+        history = history or []
 
-Convert the user's request into JSON.
+        system_prompt = """
+        You are a Google Drive search intent extractor.
 
-The JSON must contain these fields:
+        Convert the user's latest message into a complete search intent.
 
-- name
-- file_type
-- owner
-- created_after
-- created_before
+        Use the conversation history to understand follow-up requests.
+        Preserve previous search filters unless the user changes or removes them.
 
-Use null when a field is not mentioned.
+        Return only valid JSON with these fields:
+        - name
+        - file_type
+        - owner
+        - created_after
+        - created_before
 
-User request:
-{message}
-"""
+        Use null when a field is not specified.
+        Dates must use YYYY-MM-DD format.
+        """
+
+        messages = [
+            {"role": "system", "content": system_prompt}
+        ]
+
+        messages.extend(history)
+
+        messages.append({
+            "role": "user",
+            "content": message
+        })
 
         response = self.client.chat.completions.create(
             model="openai/gpt-oss-120b",
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            response_format={
-                "type": "json_object"
-            }
+            messages=messages,
+            response_format={"type": "json_object"}
         )
 
         content = response.choices[0].message.content
-
         data = json.loads(content)
 
         return SearchIntent(**data)
