@@ -11,8 +11,10 @@ class SessionStore:
 
         self.sessions[session_id] = {
             "messages": [],
+            "last_intent" : None,
             "created_at": now,
             "updated_at": now,
+            
         }
 
     def get_session(self, session_id: str):
@@ -45,3 +47,13 @@ class SessionStore:
 
     def delete_session(self, session_id: str):
         self.sessions.pop(session_id, None)
+
+
+    def update_last_intent(self, session_id: str, intent: dict):
+        session = self.get_session(session_id)
+
+        if session is None:
+            return
+
+        session["last_intent"] = intent
+        session["updated_at"] = datetime.now(timezone.utc)

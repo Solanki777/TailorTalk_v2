@@ -11,12 +11,13 @@ class Chatservice:
         self.query_builder = QueryBuilder()
         self.drive_service = DriveService()
 
-    def process_message(self, message, history=None):
+    def process_message(self, message, history=None, last_intent=None):
         history = trim_history(history or [])
 
         intent = self.llm.extract_search_intent(
     message,
-    history
+    history,
+    last_intent
 )
 
         query = self.query_builder.build(intent)

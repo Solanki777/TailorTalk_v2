@@ -10,10 +10,7 @@ app = FastAPI(title=APP_NAME)
 def home():
     return {"message":f"Welcome to {APP_NAME} 2.0"}
 
-# @app.post("/api/v1/chat")
-# def chat(request:ChatRequest):
-#     return {
-#         "message" : f"You said : {request.message}"
+
 #     }
 
 app.include_router(

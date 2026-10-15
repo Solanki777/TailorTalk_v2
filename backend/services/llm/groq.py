@@ -14,31 +14,41 @@ class GroqProvider(LLMProvider):
 
     
     def extract_search_intent(
-        self,
-        message: str,
-        history: list = None
-    ) -> SearchIntent:
+    self,
+    message: str,
+    history: list = None,
+    last_intent: dict = None
+) -> SearchIntent:
+        
         history = history or []
+        last_intent = last_intent or {}
 
         system_prompt = """
+
 You are a Google Drive search intent extractor.
 
 Convert the user's latest message into a complete search intent.
 
 Rules:
-1. Use conversation history to understand follow-up requests.
-2. Preserve previous search filters unless the user changes or removes them.
-3. Apply new filters requested in the latest message.
-4. If the user explicitly removes a filter, set that field to null.
-5. Do not invent filters that are not supported by the conversation.
-6. Return only valid JSON with exactly these fields:
+1. Use conversation history and the previous structured search intent
+   to understand follow-up requests.
+2. If the user modifies the current search, preserve existing filters
+   that still apply and apply the requested changes.
+3. If the user starts a different search, replace filters that do not
+   apply to the new request.
+4. Do not carry over old name, file type, or date filters into a new,
+   unrelated search unless the user explicitly refers to them.
+5. If the user explicitly removes a filter, set that field to null.
+6. Do not invent filters that are not supported by the conversation.
+7. Always return the complete intent for the current search.
+8. Return only valid JSON with exactly these fields:
    - name
    - file_type
    - owner
    - created_after
    - created_before
-7. Use null when a field is not applicable.
-8. Dates must use YYYY-MM-DD format.
+9. Use null when a field is not applicable.
+10. Dates must use YYYY-MM-DD format.
 """
 
         messages = [
