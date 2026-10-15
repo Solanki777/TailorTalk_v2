@@ -46,6 +46,8 @@ def chat(request: ChatRequest):
             last_intent=session.get("last_intent")
         )
     except Exception as exc:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=500,
             detail="Failed to process your search request."

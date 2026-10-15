@@ -20,9 +20,14 @@ class QueryBuilder:
                 "mimeType = 'application/vnd.google-apps.document'"
             )
 
-        elif intent.file_type == "spreadsheet":
+        
+        elif intent.file_type in ("spreadsheet", "excel"):
             conditions.append(
-                "mimeType = 'application/vnd.google-apps.spreadsheet'"
+                "("
+                "mimeType = 'application/vnd.google-apps.spreadsheet' "
+                "or mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' "
+                "or mimeType = 'application/vnd.ms-excel'"
+                ")"
             )
 
         elif intent.file_type == "presentation":
