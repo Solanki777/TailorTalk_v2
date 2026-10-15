@@ -24,5 +24,10 @@ def test_process_message_trims_history():
     service.llm.extract_search_intent.assert_called_once()
     service.query_builder.build.assert_called_once_with("test-intent")
     service.drive_service.search_files.assert_called_once_with("test-query")
+    passed_history = service.llm.extract_search_intent.call_args.args[1]
+
+    assert passed_history == [
+        {"role": "user", "content": "Find my documents"}
+    ]
 
     assert result["files"] == []
