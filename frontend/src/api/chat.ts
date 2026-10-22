@@ -38,5 +38,5 @@ export async function sendChatMessage(
     throw new Error(`API error (${response.status}): ${errorText}`)
   }
 
-  return response.json() as Promise<ChatResponse>
+  return (await response.json()) as ChatResponse
 }

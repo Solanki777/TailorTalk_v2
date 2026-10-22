@@ -1,4 +1,3 @@
-
 import { useState } from 'react'
 import {
   ArrowUp,
@@ -14,10 +13,12 @@ import {
   Sparkles,
   X,
 } from 'lucide-react'
+import { sendChatMessage, type ChatFile } from './api/chat'
 
 type Message = {
   role: 'user' | 'assistant'
   content: string
+  files?: ChatFile[]
 }
 
 const suggestions = [
@@ -45,26 +46,61 @@ export default function App() {
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sessionId, setSessionId] = useState<string | undefined>()
+  const [loading, setLoading] = useState(false)
 
-  function sendMessage(text = input) {
+  async function sendMessage(text = input) {
     const message = text.trim()
-    if (!message) return
+
+    if (!message || loading) return
 
     setMessages((current) => [
       ...current,
       { role: 'user', content: message },
-      {
-        role: 'assistant',
-        content:
-          'Your message is displayed locally. The next step is connecting TailorTalk to the FastAPI backend so it can search your Google Drive.',
-      },
     ])
     setInput('')
+    setLoading(true)
+
+    try {
+      const result = await sendChatMessage(message, sessionId)
+
+      setSessionId(result.session_id)
+
+      const files = result.message.files ?? []
+      const reply = files.length
+        ? `Found ${files.length} matching file(s).`
+        : 'No matching files found.'
+
+      setMessages((current) => [
+        ...current,
+        {
+          role: 'assistant',
+          content: reply,
+          files,
+        },
+      ])
+    } catch (error) {
+      const detail =
+        error instanceof Error
+          ? error.message
+          : 'An unexpected error occurred.'
+
+      setMessages((current) => [
+        ...current,
+        {
+          role: 'assistant',
+          content: `Could not complete the search. ${detail}`,
+        },
+      ])
+    } finally {
+      setLoading(false)
+    }
   }
 
   function startNewChat() {
     setMessages([])
     setInput('')
+    setSessionId(undefined)
     setSidebarOpen(false)
   }
 
@@ -95,6 +131,7 @@ export default function App() {
               <p className="text-xs text-slate-500">Your Drive assistant</p>
             </div>
           </div>
+
           <button
             aria-label="Close sidebar"
             onClick={() => setSidebarOpen(false)}
@@ -106,7 +143,8 @@ export default function App() {
 
         <button
           onClick={startNewChat}
-          className="flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+          disabled={loading}
+          className="flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50"
         >
           <Plus size={18} />
           New chat
@@ -126,10 +164,12 @@ export default function App() {
           <p className="mb-3 px-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
             Conversations
           </p>
+
           {messages.length > 0 ? (
             <button
               onClick={startNewChat}
-              className="flex w-full items-center gap-3 truncate rounded-xl px-3 py-3 text-left text-sm text-slate-600 hover:bg-slate-200"
+              disabled={loading}
+              className="flex w-full items-center gap-3 truncate rounded-xl px-3 py-3 text-left text-sm text-slate-600 hover:bg-slate-200 disabled:opacity-50"
             >
               <MessageSquare size={17} />
               Current conversation
@@ -167,6 +207,7 @@ export default function App() {
             >
               <Menu size={20} />
             </button>
+
             <div>
               <p className="text-sm font-semibold text-slate-800">
                 Google Drive assistant
@@ -176,9 +217,14 @@ export default function App() {
               </p>
             </div>
           </div>
+
           <div className="hidden items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-500 sm:flex">
-            <span className="h-2 w-2 rounded-full bg-amber-400" />
-            Backend not connected
+            <span
+              className={`h-2 w-2 rounded-full ${
+                loading ? 'animate-pulse bg-amber-400' : 'bg-indigo-500'
+              }`}
+            />
+            {loading ? 'Searching...' : 'API connection enabled'}
           </div>
         </header>
 
@@ -192,9 +238,11 @@ export default function App() {
               <p className="mb-3 text-sm font-semibold text-indigo-600">
                 YOUR PERSONAL FILE ASSISTANT
               </p>
+
               <h2 className="max-w-xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-4xl">
                 Your files, found through conversation.
               </h2>
+
               <p className="mt-4 max-w-xl text-base leading-7 text-slate-500">
                 Tell TailorTalk what you are looking for. Search by file type,
                 name, owner, or date without building complicated filters.
@@ -203,11 +251,13 @@ export default function App() {
               <div className="mt-10 grid gap-3 sm:grid-cols-3">
                 {suggestions.map((item) => {
                   const Icon = item.icon
+
                   return (
                     <button
                       key={item.title}
                       onClick={() => sendMessage(item.prompt)}
-                      className="group rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-indigo-300 hover:bg-indigo-50/40"
+                      disabled={loading}
+                      className="group rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-indigo-300 hover:bg-indigo-50/40 disabled:opacity-50"
                     >
                       <Icon
                         size={21}
@@ -242,17 +292,63 @@ export default function App() {
                       <Sparkles size={17} />
                     </div>
                   )}
+
                   <div
-                    className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm leading-6 ${
+                    className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-6 ${
                       message.role === 'user'
-                        ? 'bg-indigo-600 text-white'
-                        : 'border border-slate-200 bg-slate-50 text-slate-700'
+                        ? 'whitespace-pre-wrap bg-indigo-600 text-white'
+                        : 'min-w-0 border border-slate-200 bg-slate-50 text-slate-700'
                     }`}
                   >
-                    {message.content}
+                    <p className="whitespace-pre-wrap">{message.content}</p>
+
+                    {message.files?.map((file, fileIndex) => (
+                      <a
+                        key={file.id || `${file.name}-${fileIndex}`}
+                        href={file.webViewLink || undefined}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-3 flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 text-sm text-indigo-700 transition hover:bg-indigo-50"
+                      >
+                        <FileText
+                          size={19}
+                          className="mt-0.5 shrink-0 text-indigo-600"
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="block break-words font-medium">
+                            {file.name}
+                          </span>
+                          {file.mimeType && (
+                            <span className="mt-1 block break-all text-xs text-slate-500">
+                              {file.mimeType}
+                            </span>
+                          )}
+                          {file.createdTime && (
+                            <span className="mt-1 block text-xs text-slate-400">
+                              Created:{' '}
+                              {new Date(file.createdTime).toLocaleDateString()}
+                            </span>
+                          )}
+                          {file.webViewLink && (
+                            <span className="mt-1 block text-xs font-medium">
+                              Open in Google Drive ↗
+                            </span>
+                          )}
+                        </span>
+                      </a>
+                    ))}
                   </div>
                 </div>
               ))}
+
+              {loading && (
+                <div className="flex items-center gap-3 text-sm text-slate-500">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                    <Sparkles size={17} className="animate-pulse" />
+                  </div>
+                  Searching your Google Drive...
+                </div>
+              )}
             </div>
           )}
         </section>
@@ -262,7 +358,7 @@ export default function App() {
             <form
               onSubmit={(event) => {
                 event.preventDefault()
-                sendMessage()
+                void sendMessage()
               }}
               className="rounded-2xl border border-slate-200 bg-white p-2 shadow-sm transition focus-within:border-indigo-300 focus-within:ring-4 focus-within:ring-indigo-50"
             >
@@ -272,21 +368,28 @@ export default function App() {
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' && !event.shiftKey) {
                     event.preventDefault()
-                    sendMessage()
+                    void sendMessage()
                   }
                 }}
-                placeholder="Ask TailorTalk to find a file..."
+                placeholder={
+                  loading
+                    ? 'Searching your Google Drive...'
+                    : 'Ask TailorTalk to find a file...'
+                }
                 rows={2}
-                className="w-full resize-none bg-transparent px-3 py-2 text-sm leading-6 text-slate-800 outline-none placeholder:text-slate-400"
+                disabled={loading}
+                className="w-full resize-none bg-transparent px-3 py-2 text-sm leading-6 text-slate-800 outline-none placeholder:text-slate-400 disabled:opacity-60"
               />
+
               <div className="flex items-center justify-between px-2 pb-1">
                 <div className="flex items-center gap-2 text-xs text-slate-400">
                   <Search size={15} />
-                  <span>Natural language search</span>
+                  <span>Natural language search · Enter to send</span>
                 </div>
+
                 <button
                   type="submit"
-                  disabled={!input.trim()}
+                  disabled={!input.trim() || loading}
                   aria-label="Send message"
                   className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
                 >
@@ -294,6 +397,7 @@ export default function App() {
                 </button>
               </div>
             </form>
+
             <p className="mt-3 text-center text-xs text-slate-400">
               TailorTalk · Google Drive search assistant
             </p>
