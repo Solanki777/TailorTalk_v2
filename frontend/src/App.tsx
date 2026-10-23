@@ -105,7 +105,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-white text-slate-800">
+    <div className="flex h-dvh overflow-hidden bg-[#05070B] text-slate-100">
       {sidebarOpen && (
         <button
           aria-label="Close sidebar backdrop"
@@ -115,7 +115,7 @@ export default function App() {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-slate-200 bg-slate-50 p-4 transition-transform md:static md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-[#243149] bg-[#0B1428] p-4 transition-transform md:static md:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -125,17 +125,17 @@ export default function App() {
               <MessageSquare size={21} />
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-tight text-slate-900">
+              <h1 className="text-lg font-bold tracking-tight text-slate-100">
                 TailorTalk
               </h1>
-              <p className="text-xs text-slate-500">Your Drive assistant</p>
+              <p className="text-xs text-slate-400">Your Drive assistant</p>
             </div>
           </div>
 
           <button
             aria-label="Close sidebar"
             onClick={() => setSidebarOpen(false)}
-            className="rounded-lg p-2 text-slate-500 hover:bg-slate-200 md:hidden"
+            className="rounded-lg p-2 text-slate-400 hover:bg-slate-200 md:hidden"
           >
             <X size={18} />
           </button>
@@ -169,7 +169,7 @@ export default function App() {
             <button
               onClick={startNewChat}
               disabled={loading}
-              className="flex w-full items-center gap-3 truncate rounded-xl px-3 py-3 text-left text-sm text-slate-600 hover:bg-slate-200 disabled:opacity-50"
+              className="flex w-full items-center gap-3 truncate rounded-xl px-3 py-3 text-left text-sm text-slate-300 hover:bg-slate-200 disabled:opacity-50"
             >
               <MessageSquare size={17} />
               Current conversation
@@ -187,10 +187,10 @@ export default function App() {
               T
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-slate-800">
+              <p className="text-sm font-semibold text-slate-100">
                 TailorTalk
               </p>
-              <p className="text-xs text-slate-500">Personal workspace</p>
+              <p className="text-xs text-slate-400">Personal workspace</p>
             </div>
             <Settings2 size={17} className="text-slate-400" />
           </div>
@@ -198,27 +198,27 @@ export default function App() {
       </aside>
 
       <main className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-100 px-4 sm:px-7">
+        <header className="flex h-16 shrink-0 items-center justify-between border-b border-[#243149] bg-[#05070B] px-4 sm:px-7">
           <div className="flex items-center gap-3">
             <button
               aria-label="Open sidebar"
               onClick={() => setSidebarOpen(true)}
-              className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 md:hidden"
+              className="rounded-lg p-2 text-slate-300 hover:bg-slate-100 md:hidden"
             >
               <Menu size={20} />
             </button>
 
             <div>
-              <p className="text-sm font-semibold text-slate-800">
+              <p className="text-sm font-semibold text-slate-100">
                 Google Drive assistant
               </p>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-400">
                 Search files using natural language
               </p>
             </div>
           </div>
 
-          <div className="hidden items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-500 sm:flex">
+          <div className="hidden items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-400 sm:flex">
             <span
               className={`h-2 w-2 rounded-full ${
                 loading ? 'animate-pulse bg-amber-400' : 'bg-indigo-500'
@@ -239,11 +239,11 @@ export default function App() {
                 YOUR PERSONAL FILE ASSISTANT
               </p>
 
-              <h2 className="max-w-xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-4xl">
+              <h2 className="max-w-xl text-3xl font-bold leading-tight tracking-tight text-slate-100 sm:text-4xl">
                 Your files, found through conversation.
               </h2>
 
-              <p className="mt-4 max-w-xl text-base leading-7 text-slate-500">
+              <p className="mt-4 max-w-xl text-base leading-7 text-slate-400">
                 Tell TailorTalk what you are looking for. Search by file type,
                 name, owner, or date without building complicated filters.
               </p>
@@ -257,16 +257,16 @@ export default function App() {
                       key={item.title}
                       onClick={() => sendMessage(item.prompt)}
                       disabled={loading}
-                      className="group rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-indigo-300 hover:bg-indigo-50/40 disabled:opacity-50"
+                      className="group rounded-2xl border border-slate-200 bg-[#0D1422] p-4 text-left transition hover:border-indigo-300 hover:bg-indigo-50/40 disabled:opacity-50"
                     >
                       <Icon
                         size={21}
                         className="mb-5 text-indigo-600 transition group-hover:scale-110"
                       />
-                      <p className="text-sm font-semibold text-slate-800">
+                      <p className="text-sm font-semibold text-slate-100">
                         {item.title}
                       </p>
-                      <p className="mt-1 text-xs leading-5 text-slate-500">
+                      <p className="mt-1 text-xs leading-5 text-slate-400">
                         {item.description}
                       </p>
                     </button>
@@ -297,7 +297,7 @@ export default function App() {
                     className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-6 ${
                       message.role === 'user'
                         ? 'whitespace-pre-wrap bg-indigo-600 text-white'
-                        : 'min-w-0 border border-slate-200 bg-slate-50 text-slate-700'
+                        : 'min-w-0 border border-[#29364A] bg-[#0D1422] text-slate-200'
                     }`}
                   >
                     <p className="whitespace-pre-wrap">{message.content}</p>
@@ -308,7 +308,7 @@ export default function App() {
                         href={file.webViewLink || undefined}
                         target="_blank"
                         rel="noreferrer"
-                        className="mt-3 flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 text-sm text-indigo-700 transition hover:bg-indigo-50"
+                        className="mt-3 flex items-start gap-3 rounded-xl border border-[#29364A] bg-[#111827] p-3 text-sm text-blue-300 transition hover:bg-indigo-50"
                       >
                         <FileText
                           size={19}
@@ -319,7 +319,7 @@ export default function App() {
                             {file.name}
                           </span>
                           {file.mimeType && (
-                            <span className="mt-1 block break-all text-xs text-slate-500">
+                            <span className="mt-1 block break-all text-xs text-slate-400">
                               {file.mimeType}
                             </span>
                           )}
@@ -342,7 +342,7 @@ export default function App() {
               ))}
 
               {loading && (
-                <div className="flex items-center gap-3 text-sm text-slate-500">
+                <div className="flex items-center gap-3 text-sm text-slate-400">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
                     <Sparkles size={17} className="animate-pulse" />
                   </div>
@@ -360,7 +360,7 @@ export default function App() {
                 event.preventDefault()
                 void sendMessage()
               }}
-              className="rounded-2xl border border-slate-200 bg-white p-2 shadow-sm transition focus-within:border-indigo-300 focus-within:ring-4 focus-within:ring-indigo-50"
+              className="rounded-2xl border border-[#29364A] bg-[#0D1422] p-2 shadow-sm transition focus-within:border-indigo-300 focus-within:ring-4 focus-within:ring-indigo-50"
             >
               <textarea
                 value={input}
@@ -378,7 +378,7 @@ export default function App() {
                 }
                 rows={2}
                 disabled={loading}
-                className="w-full resize-none bg-transparent px-3 py-2 text-sm leading-6 text-slate-800 outline-none placeholder:text-slate-400 disabled:opacity-60"
+                className="w-full resize-none bg-transparent px-3 py-2 text-sm leading-6 text-slate-100 outline-none placeholder:text-slate-400 disabled:opacity-60"
               />
 
               <div className="flex items-center justify-between px-2 pb-1">
