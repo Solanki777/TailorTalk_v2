@@ -4,8 +4,12 @@ from backend.api.routes.chat import router as chat_router
 from backend.config import *
 from backend.api.routes.health import router as health_router
 from fastapi.middleware.cors import CORSMiddleware
+from backend.api.routes.settings import router as settings_router
 
 app = FastAPI(title=APP_NAME)
+
+
+app.include_router(settings_router, prefix="/api/v1")
 
 app.add_middleware(
     CORSMiddleware,
