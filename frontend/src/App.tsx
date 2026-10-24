@@ -1,47 +1,16 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Menu } from "lucide-react";
 import Settings from "./Settings";
+import { sendChatMessage } from "./api/chat";
 import {
-  ArrowUp,
-  Clock3,
-  FileSpreadsheet,
-  FileText,
-  FolderOpen,
-  Menu,
-  MessageSquare,
-  Plus,
-  Search,
-  Settings2,
-  Sparkles,
-  X,
-} from "lucide-react";
-import { sendChatMessage, type ChatFile } from "./api/chat";
-
-type Message = {
-  role: "user" | "assistant";
-  content: string;
-  files?: ChatFile[];
-};
-
-const suggestions = [
-  {
-    title: "Find PDF files",
-    description: "Search your documents",
-    icon: FileText,
-    prompt: "Find my PDF files",
-  },
-  {
-    title: "Find Excel files",
-    description: "Search your spreadsheets",
-    icon: FileSpreadsheet,
-    prompt: "Find my Excel files",
-  },
-  {
-    title: "Recent files",
-    description: "Find recently created files",
-    icon: Clock3,
-    prompt: "Find my recently created files",
-  },
-];
+  clearCurrentChat,
+  loadCurrentChat,
+  saveCurrentChat,
+} from "./api/chatStorage";
+import ChatComposer from "./components/ChatComposer";
+import ChatMessages from "./components/ChatMessages";
+import ChatSidebar from "./components/ChatSidebar";
+import type { Message } from "./types/chat";
 
 export default function App() {
   const [activePage, setActivePage] = useState<"chat" | "settings">("chat");
@@ -50,53 +19,105 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sessionId, setSessionId] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
+  const [storageReady, setStorageReady] = useState(false);
+  const requestInProgress = useRef(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function restoreChat() {
+      try {
+        const saved = await loadCurrentChat();
+        if (!cancelled && saved) {
+          setMessages(saved.messages);
+          setSessionId(saved.sessionId);
+        }
+      } catch (error) {
+        console.error("Could not restore chat history:", error);
+      } finally {
+        if (!cancelled) setStorageReady(true);
+      }
+    }
+
+    void restoreChat();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function persistChat(nextMessages: Message[], nextSessionId?: string) {
+    try {
+      await saveCurrentChat(nextMessages, nextSessionId);
+    } catch (error) {
+      console.error("Could not save chat history:", error);
+    }
+  }
 
   async function sendMessage(text = input) {
     const message = text.trim();
+    if (!message || loading || requestInProgress.current || !storageReady) return;
 
-    if (!message || loading) return;
-
-    setMessages((current) => [...current, { role: "user", content: message }]);
-    setInput("");
+    requestInProgress.current = true;
     setLoading(true);
+    setInput("");
+
+    const userMessages: Message[] = [
+      ...messages,
+      { role: "user", content: message },
+    ];
+    setMessages(userMessages);
+
+    // Save the user's message before making the network request.
+    await persistChat(userMessages, sessionId);
 
     try {
-      const result = await sendChatMessage(message, sessionId);
+          
+    const result = await sendChatMessage(message, sessionId);
+    const nextSessionId = result.session_id;
+    setSessionId(nextSessionId);
 
-      setSessionId(result.session_id);
+    const files = result.message.files ?? [];
+    const reply = result.message.reply;
 
-      const files = result.message.files ?? [];
-      const reply = files.length
-        ? `Found ${files.length} matching file(s).`
-        : "No matching files found.";
+    const assistantMessages: Message[] = [
+      ...userMessages,
+      {
+        role: "assistant",
+        content: reply,
+        files,
+      },
+    ];
 
-      setMessages((current) => [
-        ...current,
-        {
-          role: "assistant",
-          content: reply,
-          files,
-        },
-      ]);
+setMessages(assistantMessages);
+await persistChat(assistantMessages, nextSessionId);
+
     } catch (error) {
       const detail =
-        error instanceof Error
-          ? error.message
-          : "An unexpected error occurred.";
-
-      setMessages((current) => [
-        ...current,
+        error instanceof Error ? error.message : "An unexpected error occurred.";
+      const errorMessages: Message[] = [
+        ...userMessages,
         {
           role: "assistant",
           content: `Could not complete the search. ${detail}`,
         },
-      ]);
+      ];
+      setMessages(errorMessages);
+      await persistChat(errorMessages, sessionId);
     } finally {
+      requestInProgress.current = false;
       setLoading(false);
     }
   }
 
-  function startNewChat() {
+  async function startNewChat() {
+    if (loading) return;
+
+    try {
+      await clearCurrentChat();
+    } catch (error) {
+      console.error("Could not clear saved chat:", error);
+    }
+
     setMessages([]);
     setInput("");
     setSessionId(undefined);
@@ -105,108 +126,18 @@ export default function App() {
 
   return (
     <div className="flex h-dvh overflow-hidden bg-[#05070B] text-slate-100">
-      {sidebarOpen && (
-        <button
-          aria-label="Close sidebar backdrop"
-          className="fixed inset-0 z-20 bg-black/30 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      <aside
-        className={`fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-[#243149] bg-[#0B1428] p-4 transition-transform md:static md:translate-x-0 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        <div className="mb-8 flex items-center justify-between px-1">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-sm">
-              <MessageSquare size={21} />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold tracking-tight text-slate-100">
-                TailorTalk
-              </h1>
-              <p className="text-xs text-slate-400">Your Drive assistant</p>
-            </div>
-          </div>
-
-          <button
-            aria-label="Close sidebar"
-            onClick={() => setSidebarOpen(false)}
-            className="rounded-lg p-2 text-slate-400 hover:bg-slate-200 md:hidden"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        <button
-          onClick={startNewChat}
-          disabled={loading}
-          className="flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50"
-        >
-          <Plus size={18} />
-          New chat
-        </button>
-
-        <div className="mt-8">
-          <p className="mb-3 px-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-            Workspace
-          </p>
-          <div className="flex items-center gap-3 rounded-xl bg-indigo-50 px-3 py-3 text-sm font-medium text-indigo-700">
-            <FolderOpen size={18} />
-            Google Drive search
-          </div>
-        </div>
-        <button
-          onClick={() => {
-            setActivePage("settings");
-            setSidebarOpen(false);
-          }}
-          className={`mt-2 flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition ${
-            activePage === "settings"
-              ? "bg-indigo-600 text-white"
-              : "text-slate-300 hover:bg-[#172238]"
-          }`}
-        >
-          <Settings2 size={18} />
-          Settings & API Keys
-        </button>
-
-        <div className="mt-8">
-          <p className="mb-3 px-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-            Conversations
-          </p>
-
-          {messages.length > 0 ? (
-            <button
-              onClick={startNewChat}
-              disabled={loading}
-              className="flex w-full items-center gap-3 truncate rounded-xl px-3 py-3 text-left text-sm text-slate-300 hover:bg-slate-200 disabled:opacity-50"
-            >
-              <MessageSquare size={17} />
-              Current conversation
-            </button>
-          ) : (
-            <p className="px-3 text-sm text-slate-400">
-              Your conversations will appear here.
-            </p>
-          )}
-        </div>
-
-        <div className="mt-auto border-t border-slate-200 pt-4">
-          <div className="flex items-center gap-3 rounded-xl px-2 py-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-200 text-sm font-bold text-slate-700">
-              T
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-slate-100">TailorTalk</p>
-              <p className="text-xs text-slate-400">Personal workspace</p>
-            </div>
-            <Settings2 size={17} className="text-slate-400" />
-          </div>
-        </div>
-      </aside>
+      <ChatSidebar
+        open={sidebarOpen}
+        activePage={activePage}
+        hasMessages={messages.length > 0}
+        loading={loading || !storageReady}
+        onNewChat={() => void startNewChat()}
+        onOpenSettings={() => {
+          setActivePage("settings");
+          setSidebarOpen(false);
+        }}
+        onClose={() => setSidebarOpen(false)}
+      />
 
       <main className="flex min-w-0 flex-1 flex-col">
         {activePage === "settings" ? (
@@ -216,7 +147,6 @@ export default function App() {
                 TailorTalk Settings
               </h1>
             </header>
-
             <Settings onBack={() => setActivePage("chat")} />
           </>
         ) : (
@@ -230,7 +160,6 @@ export default function App() {
                 >
                   <Menu size={20} />
                 </button>
-
                 <div>
                   <p className="text-sm font-semibold text-slate-100">
                     Google Drive assistant
@@ -240,7 +169,6 @@ export default function App() {
                   </p>
                 </div>
               </div>
-
               <div className="hidden items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-400 sm:flex">
                 <span
                   className={`h-2 w-2 rounded-full ${
@@ -252,185 +180,20 @@ export default function App() {
             </header>
 
             <section className="flex-1 overflow-y-auto">
-              {messages.length === 0 ? (
-                <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col justify-center px-5 py-12 sm:px-8">
-                  <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
-                    <Sparkles size={28} />
-                  </div>
-
-                  <p className="mb-3 text-sm font-semibold text-indigo-600">
-                    YOUR PERSONAL FILE ASSISTANT
-                  </p>
-
-                  <h2 className="max-w-xl text-3xl font-bold leading-tight tracking-tight text-slate-100 sm:text-4xl">
-                    Your files, found through conversation.
-                  </h2>
-
-                  <p className="mt-4 max-w-xl text-base leading-7 text-slate-400">
-                    Tell TailorTalk what you are looking for. Search by file
-                    type, name, owner, or date without building complicated
-                    filters.
-                  </p>
-
-                  <div className="mt-10 grid gap-3 sm:grid-cols-3">
-                    {suggestions.map((item) => {
-                      const Icon = item.icon;
-
-                      return (
-                        <button
-                          key={item.title}
-                          onClick={() => sendMessage(item.prompt)}
-                          disabled={loading}
-                          className="group rounded-2xl border border-slate-200 bg-[#0D1422] p-4 text-left transition hover:border-indigo-300 hover:bg-indigo-50/40 disabled:opacity-50"
-                        >
-                          <Icon
-                            size={21}
-                            className="mb-5 text-indigo-600 transition group-hover:scale-110"
-                          />
-                          <p className="text-sm font-semibold text-slate-100">
-                            {item.title}
-                          </p>
-                          <p className="mt-1 text-xs leading-5 text-slate-400">
-                            {item.description}
-                          </p>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <p className="mt-8 text-center text-xs text-slate-400">
-                    Try a suggestion or type your own search below.
-                  </p>
-                </div>
-              ) : (
-                <div className="mx-auto w-full max-w-3xl space-y-7 px-5 py-8 sm:px-8">
-                  {messages.map((message, index) => (
-                    <div
-                      key={`${index}-${message.role}`}
-                      className={`flex gap-3 ${
-                        message.role === "user"
-                          ? "justify-end"
-                          : "justify-start"
-                      }`}
-                    >
-                      {message.role === "assistant" && (
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white">
-                          <Sparkles size={17} />
-                        </div>
-                      )}
-
-                      <div
-                        className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-6 ${
-                          message.role === "user"
-                            ? "whitespace-pre-wrap bg-indigo-600 text-white"
-                            : "min-w-0 border border-[#29364A] bg-[#0D1422] text-slate-200"
-                        }`}
-                      >
-                        <p className="whitespace-pre-wrap">{message.content}</p>
-
-                        {message.files?.map((file, fileIndex) => (
-                          <a
-                            key={file.id || `${file.name}-${fileIndex}`}
-                            href={file.webViewLink || undefined}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="mt-3 flex items-start gap-3 rounded-xl border border-[#29364A] bg-[#111827] p-3 text-sm text-blue-300 transition hover:bg-indigo-50"
-                          >
-                            <FileText
-                              size={19}
-                              className="mt-0.5 shrink-0 text-indigo-600"
-                            />
-                            <span className="min-w-0 flex-1">
-                              <span className="block break-words font-medium">
-                                {file.name}
-                              </span>
-                              {file.mimeType && (
-                                <span className="mt-1 block break-all text-xs text-slate-400">
-                                  {file.mimeType}
-                                </span>
-                              )}
-                              {file.createdTime && (
-                                <span className="mt-1 block text-xs text-slate-400">
-                                  Created:{" "}
-                                  {new Date(
-                                    file.createdTime,
-                                  ).toLocaleDateString()}
-                                </span>
-                              )}
-                              {file.webViewLink && (
-                                <span className="mt-1 block text-xs font-medium">
-                                  Open in Google Drive ↗
-                                </span>
-                              )}
-                            </span>
-                          </a>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-
-                  {loading && (
-                    <div className="flex items-center gap-3 text-sm text-slate-400">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-                        <Sparkles size={17} className="animate-pulse" />
-                      </div>
-                      Searching your Google Drive...
-                    </div>
-                  )}
-                </div>
-              )}
+              <ChatMessages
+                messages={messages}
+                loading={loading}
+                onSuggestion={(prompt: string) => void sendMessage(prompt)}
+              />
             </section>
 
-            <footer className="shrink-0 px-4 pb-5 pt-3 sm:px-8 sm:pb-7">
-              <div className="mx-auto max-w-3xl">
-                <form
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    void sendMessage();
-                  }}
-                  className="rounded-2xl border border-[#29364A] bg-[#0D1422] p-2 shadow-sm transition focus-within:border-indigo-300 focus-within:ring-4 focus-within:ring-indigo-50"
-                >
-                  <textarea
-                    value={input}
-                    onChange={(event) => setInput(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" && !event.shiftKey) {
-                        event.preventDefault();
-                        void sendMessage();
-                      }
-                    }}
-                    placeholder={
-                      loading
-                        ? "Searching your Google Drive..."
-                        : "Ask TailorTalk to find a file..."
-                    }
-                    rows={2}
-                    disabled={loading}
-                    className="w-full resize-none bg-transparent px-3 py-2 text-sm leading-6 text-slate-100 outline-none placeholder:text-slate-400 disabled:opacity-60"
-                  />
-
-                  <div className="flex items-center justify-between px-2 pb-1">
-                    <div className="flex items-center gap-2 text-xs text-slate-400">
-                      <Search size={15} />
-                      <span>Natural language search · Enter to send</span>
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={!input.trim() || loading}
-                      aria-label="Send message"
-                      className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
-                    >
-                      <ArrowUp size={19} />
-                    </button>
-                  </div>
-                </form>
-
-                <p className="mt-3 text-center text-xs text-slate-400">
-                  TailorTalk · Google Drive search assistant
-                </p>
-              </div>
-            </footer>
+            <ChatComposer
+              value={input}
+              loading={loading}
+              storageReady={storageReady}
+              onChange={setInput}
+              onSend={() => void sendMessage()}
+            />
           </>
         )}
       </main>

@@ -9,14 +9,18 @@ export type ChatFile = {
   webViewLink?: string
 }
 
+
 export type ChatResponse = {
-  session_id: string
+  session_id: string;
   message: {
-    intent: Record<string, unknown>
-    query: string
-    files: ChatFile[]
-  }
-}
+    type: "conversation" | "search";
+    reply: string;
+    intent: Record<string, unknown> | null;
+    query: string | null;
+    files: ChatFile[];
+  };
+};
+
 
 export async function sendChatMessage(
   message: string,
