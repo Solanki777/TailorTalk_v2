@@ -1,272 +1,366 @@
-uvicorn backend.main:app --reload
+# React + TypeScript + Vite
 
+This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
+Currently, two official plugins are available:
 
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
+## React Compiler
 
-# 📁 Tailortalk
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-### *Next-Generation Conversational Intelligence for Google Drive Retrieval*
+## Expanding the Oxlint configuration
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.111.0-05998b.svg)](https://fastapi.tiangolo.com/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.35.0-ff4b4b.svg)](https://streamlit.io/)
-[![LangGraph](https://img.shields.io/badge/LangGraph-Orchestration-orange.svg)](https://github.com/langchain-ai/langgraph)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
 
-Tailortalk is a production-grade AI-powered assistant designed to bridge the gap between human language and structured cloud storage. By leveraging **LangGraph** for deterministic orchestration and **Groq** for high-speed LLM inference, Tailortalk transforms Google Drive from a static file repository into a conversational discovery engine.
-
----
-
-## 🚀 Project Overview
-
-### The Problem
-Traditional file search relies on exact keyword matching and rigid folder hierarchies. Users often struggle to find documents unless they remember the precise filename or location, leading to significant productivity loss in large-scale corporate environments.
-
-### The Solution
-Tailortalk introduces **Conversational Retrieval**. It allows users to query their Google Drive using natural, ambiguous language. The system extracts intent, maintains conversational memory, and executes deterministic search queries, providing a human-centric layer over the Google Drive API.
-
----
-
-## ✨ Key Features
-
-- **🔍 Semantic Intent Extraction**: Precisely identifies filters (MIME types, dates, owners, folders) from natural language using Pydantic v2 validation.
-- **🧠 Conversational Memory**: State-aware architecture that allows for iterative refinement (e.g., *"Show my PDFs"* followed by *"Only the ones from last week"*).
-- **📊 Intelligent Ranking Engine**: A 100-point scoring algorithm that ranks results based on name similarity, recency, and ownership.
-- **🔁 Deduplication & Grouping**: Advanced post-processing pipeline that collapses exact duplicates and groups visually similar results.
-- **❓ Proactive Clarification**: Gracefully handles vague or broad queries by requesting specific missing parameters.
-- **🔒 Deterministic Query Building**: Unlike "Black Box" AI, Tailortalk uses a deterministic builder—ensuring the LLM never generates raw API queries directly.
-
----
-
-## 🏗️ System Architecture
-
-Tailortalk follows a decoupled architecture, separating the LLM-powered intelligence layer from the deterministic business logic.
-
-### Request Lifecycle & Orchestration
-The core logic is orchestrated via a **LangGraph State Machine**, ensuring a predictable and traceable execution path:
-
-```mermaid
-graph TD
-    User([User Message]) --> API[FastAPI Entrypoint]
-    API --> Graph{LangGraph Orchestrator}
-    
-    subgraph "AI Intelligence Layer"
-        Graph --> Intent[Intent Extraction Node]
-        Intent --> Groq1((Groq LLM))
-    end
-    
-    subgraph "Deterministic Logic Layer"
-        Intent --> Query[Query Builder]
-        Query --> Drive[Google Drive API]
-        Drive --> Processing[Post-Processing Node]
-        Processing --> Dedup[Deduplication]
-        Processing --> Ranking[Ranking Engine]
-    end
-    
-    subgraph "Response Generation"
-        Ranking --> Formatter[Response Formatter Node]
-        Formatter --> Groq2((Groq LLM))
-    end
-    
-    Formatter --> UI[Streamlit UI / Result Cards]
+```json
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "oxc"],
+  "options": {
+    "typeAware": true
+  },
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/only-export-components": ["warn", { "allowConstantExport": true }]
+  }
+}
 ```
 
----
+See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+# TailorTalk
 
-## 🛠️ Tech Stack
+### Conversational Google Drive Search with Progressive OCR
 
-| Component | Technology | Role |
-| :--- | :--- | :--- |
-| **Backend** | FastAPI | High-performance asynchronous API |
-| **Orchestration** | LangGraph | State-managed agentic workflow |
-| **LLM Inference** | Groq (Llama 3) | High-speed structured extraction |
-| **Validation** | Pydantic v2 | Type safety and data integrity |
-| **Frontend** | Streamlit | Modern, interactive user interface |
-| **Cloud API** | Google Drive v3 | Metadata and file discovery |
-| **Environment** | Python 3.10+ | Core language runtime |
+TailorTalk is an AI-powered assistant designed to help users find Google
+Drive documents through natural language. It combines conversational
+search, deterministic filtering, document text extraction, and
+session-scoped search memory.
 
----
+> **Implementation status:** Progressive OCR search and session OCR
+> memory are the planned implementation direction. Do not treat them as
+> complete until they are implemented and tested in the repository.
 
-## 📂 Folder Structure
+## Overview
 
-```text
-Tailortalk/
+Traditional file search often requires users to remember exact filenames
+or folder locations. TailorTalk lets users describe what they remember
+and refine their search naturally.
+
+Example: 1. User: "Find the document that mentions my internship
+stipend." 2. TailorTalk searches filenames and metadata, then checks
+text in likely candidate documents. 3. User: "It was from the company
+that offered me the internship." 4. TailorTalk reuses the current
+conversation's search context and narrows the candidates. 5. TailorTalk
+returns relevant documents with supporting snippets and links when
+available.
+
+The assistant should ask a clarifying question only when it would
+materially improve an ambiguous search.
+
+## Features
+
+### Existing project capabilities
+
+-   Conversational Google Drive search.
+-   Groq-powered intent extraction.
+-   Deterministic query building and validated filters.
+-   Follow-up refinement using conversational context.
+-   Ranking and deduplication of results where supported by the existing
+    pipeline.
+-   Clarifying questions for ambiguous requests.
+
+### Planned progressive OCR capabilities
+
+-   Extract embedded PDF text before using OCR.
+-   Use a free local OCR engine for scanned PDFs and images.
+-   Extract useful entities and clues such as organizations, dates,
+    amounts, and names.
+-   Store candidate file IDs, clues, and match evidence in the current
+    conversation's search context.
+-   Narrow candidates on follow-up messages; expand the search when no
+    credible match is found.
+-   Cache extracted text by document ID and version so unchanged
+    documents are not processed repeatedly.
+-   Return evidence snippets and links where available.
+
+## Intended Search Flow
+
+``` mermaid
+flowchart TD
+    A[User message] --> B[Load conversation search context]
+    B --> C{Request clear?}
+    C -- No --> D[Ask focused clarification]
+    D --> E[Update search clues]
+    C -- Yes --> E
+    E --> F{Existing candidates?}
+    F -- Yes --> G[Filter cached candidates first]
+    F -- No --> H[Search Drive metadata and filenames]
+    H --> I[Rank likely candidates]
+    G --> J[Read cached extracted text]
+    I --> K[Extract text from likely candidates]
+    K --> L{Embedded text available?}
+    L -- Yes --> M[Use embedded text]
+    L -- No --> N[Run local OCR]
+    M --> O[Extract entities and match evidence]
+    N --> O
+    J --> O
+    O --> P[Rank and return documents]
+    P --> Q[Save updated session context]
+    Q --> R[User follow-up]
+    R --> B
+```
+
+### Efficiency rules
+
+1.  Search filenames and metadata before processing document contents.
+2.  Reuse cached text for unchanged documents.
+3.  Run OCR only when embedded text is missing or insufficient.
+4.  Narrow the current candidate set first for relevant follow-up
+    messages.
+5.  Expand the search when the current candidate set has no credible
+    match.
+6.  Keep search context isolated by conversation.
+7.  Send only relevant snippets to the LLM, not entire document
+    collections.
+
+## Architecture
+
+The current project direction uses React + TypeScript + Vite for the
+frontend, FastAPI for the backend, SQLite for local persistence, Groq
+for language understanding, and Google Drive for file discovery.
+
+  -----------------------------------------------------------------------
+  Layer                   Technology              Responsibility
+  ----------------------- ----------------------- -----------------------
+  Frontend                React, TypeScript, Vite Chat interface and
+                                                  results
+
+  API                     FastAPI                 Chat endpoint and
+                                                  backend coordination
+
+  Language understanding  Groq                    Interpret requests and
+                                                  generate responses
+
+  Cloud files             Google Drive API        Search files and
+                                                  retrieve
+                                                  metadata/content
+
+  Persistence             SQLite                  Conversation data and
+                                                  potential OCR/search
+                                                  cache
+
+  PDF extraction          PyMuPDF                 Extract embedded PDF
+                          (optional/planned)      text
+
+  Local OCR               PaddleOCR or another    Extract text from
+                          selected open-source    scanned pages and
+                          engine                  images
+
+  Entity extraction       Rules or a selected NLP Identify entities and
+                          library                 useful clues
+  -----------------------------------------------------------------------
+
+The current installed dependencies and modules must be checked before
+adding or replacing an OCR engine. The project's Settings UI has
+previously mentioned PaddleOCR; verify whether it is already installed
+and wired into the backend.
+
+## Project Structure
+
+This is a logical guide, not a guarantee that every listed module
+already exists. Integrate with existing equivalent modules instead of
+creating duplicates.
+
+``` text
+TailorTalkv2/
 ├── backend/
-│   ├── agent/                 # LangGraph workflow, nodes, and state schemas
-│   ├── api/                   # FastAPI routing and lifecycle events
-│   ├── schemas/               # Structured Pydantic v2 models (Intent, Drive, Session)
-│   ├── services/              # Business logic (Query Builder, Ranker, Dedup Engine)
-│   ├── session/               # State management (Follow-up merging logic)
-│   └── utils/                 # MIME mapping, logging, and date helpers
+│   ├── api/routes/chat.py
+│   ├── services/
+│   │   ├── document_search.py       # Existing or planned search service
+│   │   ├── document_text.py         # Planned text extraction/OCR
+│   │   └── search_context.py        # Planned per-conversation context
+│   └── data/conversations.db        # If configured here
 ├── frontend/
-│   ├── components/            # Modular UI (Chat Interface, Result Cards)
-│   ├── state/                 # Streamlit session state orchestration
-│   ├── utils/                 # API communication and visual icons
-│   └── app.py                 # Streamlit application entrypoint
-├── tests/                     # Unit and integration test suite
-├── .env                       # Environment configuration
-├── start.py                   # Unified system launcher
-└── requirements.txt           # Dependency management
+│   └── src/
+│       ├── api/
+│       ├── components/
+│       └── ...
+├── requirements.txt
+└── README.md
 ```
 
----
+## Setup
 
-## 🚀 Installation & Setup
+### 1. Open the repository
 
-### 1. Repository Setup
-```bash
-git clone https://github.com/Solanki777/EasyFetch.git
-cd Tailortalk
+``` powershell
+cd D:\TailorTalkv2
 ```
 
-### 2. Virtual Environment
-```bash
-python -m venv venv
-source venv/bin/activate  # Windows: .\venv\Scripts\activate
+### 2. Create a Python virtual environment
+
+``` powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
 
-### 3. Google Drive Authentication
-Tailortalk uses **Application Default Credentials (ADC)**. Run the following command and follow the browser prompts:
-```bash
+If dependencies are managed by a backend-specific requirements file,
+install from that file instead.
+
+### 3. Configure environment variables
+
+Create or update the `.env` file in the location expected by the backend
+configuration. For example:
+
+``` env
+GROQ_API_KEY=your_groq_api_key
+LLM_MODEL=your_supported_model_name
+```
+
+Use the model name expected by your installed Groq integration. Never
+commit `.env`, API keys, Google tokens, or other credentials.
+
+### 4. Configure Google Drive access
+
+Use the authentication method already implemented in the repository. If
+it uses Google Application Default Credentials, enable the Drive API in
+the relevant Google Cloud project and authenticate:
+
+``` bash
 gcloud auth application-default login
 ```
-*Ensure the Drive API is enabled in your Google Cloud Project console.*
 
-### 4. Configuration
-The system requires a `.env` file in the root directory to store sensitive API keys.
+### 5. Start the backend
 
-1.  **Create the file:**
-    ```bash
-    touch .env  # Or create a new file named .env in the root folder
-    ```
-2.  **Add your Groq API Key:**
-    Visit [Groq Cloud Console](https://console.groq.com/keys) to generate a key.
-    ```env
-    GROQ_API_KEY=gsk_your_actual_key_here
-    LLM_MODEL=llama3-8b-8192
-    BACKEND_URL=http://localhost:8000
-    ```
+For a FastAPI app exposed as `app` in `backend/main.py`, the command may
+be:
 
-> [!IMPORTANT]
-> **Tailortalk will not start without a valid `GROQ_API_KEY`.** This key powers the intent extraction and response formatting layers.
-
-### 5. Launch the System
-Tailortalk includes a unified startup script to launch both services:
-```bash
-python start.py both
+``` powershell
+uvicorn backend.main:app --reload --port 8000
 ```
 
----
+Confirm the actual entry point in your checkout before running this
+command.
 
-## 📡 API Reference
+### 6. Start the frontend
 
-| Endpoint | Method | Description |
-| :--- | :--- | :--- |
-| `/api/v1/chat` | `POST` | Primary conversational search endpoint |
-| `/api/v1/session/{id}` | `GET` | Retrieve session history and active filters |
-| `/health` | `GET` | System health and version status |
-| `/docs` | `GET` | Interactive Swagger/OpenAPI documentation |
+Open a second terminal:
 
----
+``` powershell
+cd frontend
+npm install
+npm run dev
+```
 
-## 💬 Example Queries
+Use the scripts defined in `frontend/package.json` if they differ.
 
-- **Discovery**: *"Find my project proposals from this year."*
-- **Filtering**: *"Show only PDFs."*
-- **Follow-up**: *"Now only the ones shared by Mahesh."*
-- **Navigation**: *"Open the second result."*
-- **Broad Search**: *"List all files in the 'Finance' folder."*
+## API Notes
 
----
+The existing frontend integration uses a chat endpoint similar to:
 
+``` http
+POST /api/v1/chat
+Content-Type: application/json
+```
 
-## 📸 Screenshots
+Example request:
 
-### 🔍 Find All Files
-The assistant retrieves and ranks all accessible Google Drive files conversationally.
+``` json
+{
+  "message": "Find the document that mentions my stipend",
+  "session_id": "your-conversation-id"
+}
+```
 
-<img width="950" height="836" alt="Find All Files" src="https://github.com/user-attachments/assets/3d614c33-893a-45c1-9323-452c5a803779" />
+Keep the actual request/response contract compatible with the current
+frontend. Verify the API prefix and schema from the running FastAPI
+application or its OpenAPI page before relying on this example.
 
----
+## Session Memory and OCR Cache
 
-### 🎯 Search Specific Files
-Users can search for specific files using natural language queries.
+### Conversation search context
 
-<img width="702" height="383" alt="Search Specific Files" src="https://github.com/user-attachments/assets/60082a7a-7e24-4ccf-8ff8-8690e506677f" />
+Recommended per-conversation state: - Current search intent and
+user-provided clues. - Candidate document IDs and ranking information. -
+Relevant entities and keywords. - Evidence snippets supporting candidate
+matches. - Whether the search was narrowed or broadened. - Document IDs
+and versions referenced by cached text.
 
----
+A follow-up such as "only the one from my internship company" should
+reuse the previous candidates and add the new clue rather than restart
+an unrelated full search.
 
-### 📄 Filter PDF Files
-The assistant intelligently filters and returns only PDF documents.
+### Persistent OCR cache
 
-<img width="683" height="730" alt="Show Only PDFs" src="https://github.com/user-attachments/assets/bc8f6b05-c386-4c83-b89b-f0ec76d87495" />
+Cache extracted text by stable document ID plus a version signal, such
+as Drive file ID and modification time or checksum. Refresh the cached
+text when the document changes.
 
----
+Keep these concepts separate: - **Session context:** temporary search
+state for one conversation. - **Persistent cache:** reusable extracted
+text that may serve multiple searches subject to access controls.
 
-### 🖼️ Filter Image Files
-Supports image-based filtering for PNG, JPG, and other image formats.
+Respect Drive permissions and do not expose cached text to users who
+cannot access the original document.
 
-<img width="614" height="677" alt="Show Only Images" src="https://github.com/user-attachments/assets/536fbe43-5de1-4053-baee-41a46142052a" />
+## Testing Checklist
 
----
+-   [ ] Existing filename and metadata search still works.
+-   [ ] Text-based PDFs are searched without OCR when embedded text is
+    available.
+-   [ ] Scanned PDFs invoke local OCR when required.
+-   [ ] Supported images can be OCR-processed.
+-   [ ] Repeated searches reuse cached extraction output.
+-   [ ] Changed documents refresh their cache.
+-   [ ] Follow-ups narrow the active candidate set.
+-   [ ] Zero-match searches can expand the search.
+-   [ ] Context from one conversation does not leak into another.
+-   [ ] Results include evidence snippets and links when available.
+-   [ ] Missing OCR dependencies produce a clear, graceful error.
+-   [ ] The existing chat API and frontend still work.
 
-### 📂 Browse Folders
-Retrieve only Google Drive folders conversationally.
+## Troubleshooting
 
-<img width="603" height="718" alt="Show Folders" src="https://github.com/user-attachments/assets/7eccc906-4512-4d04-8d01-26982aa10b6d" />
+  -----------------------------------------------------------------------
+  Problem                             What to check
+  ----------------------------------- -----------------------------------
+  Backend cannot start                Virtual environment, dependencies,
+                                      environment variables, and actual
+                                      FastAPI entry point
 
----
+  Groq authentication error           Confirm the key is configured where
+                                      backend settings expect it
 
-### 📊 Spreadsheet Discovery
-Find spreadsheets and tabular documents using natural language queries.
+  Google Drive authorization error    Check account permissions and Drive
+                                      API configuration
 
-<img width="582" height="722" alt="Find Spreadsheets" src="https://github.com/user-attachments/assets/bea60509-2eae-459b-8ed3-2bc49e1f9441" />
+  No text found in a PDF              Check whether it has embedded text
+                                      or scanned page images
 
----
+  OCR runs repeatedly                 Cache using document ID and version
 
-### 🕒 Recent Upload Discovery
-Search files dynamically based on upload and modification recency.
+  Follow-up loses earlier clues       Verify context is loaded and saved
+                                      using the same session ID
 
-<img width="638" height="713" alt="Recent Upload Search" src="https://github.com/user-attachments/assets/6b382fed-5d18-494f-8988-3013fbde5591" />
+  Incorrect document ranking          Inspect evidence snippets, entity
+                                      extraction, and ranking signals
+  -----------------------------------------------------------------------
 
+## Security and Privacy
 
+-   Keep API keys and credentials on the backend.
+-   Never commit `.env`, token files, or private credentials.
+-   Apply Drive access controls to search results and cached text.
+-   Isolate search context by conversation.
+-   Send only relevant document snippets to the LLM.
+-   Treat OCR text as untrusted document content, not instructions to
+    the assistant.
 
-## 🛡️ Production Engineering Highlights
+## License
 
-### Deterministic Orchestration
-Unlike traditional agents that "loop" indefinitely, Tailortalk uses a **Directed Acyclic Graph (DAG)**. This ensures that every request follows a validated, predictable path from intent to result, critical for enterprise reliability.
-
-### Separation of Intelligence and Execution
-We treat the LLM as a **Translation Layer**, not an Execution Layer. The LLM translates natural language into a validated `SearchIntent` object. All interactions with the Google Drive API are then handled by deterministic Python code.
-
-### Typed Data Integrity
-The entire pipeline is built on **Pydantic v2**. This ensures that every piece of data—from the user's intent to the Drive file metadata—is validated against strict schemas before being processed.
-
----
-
-## 🔧 Troubleshooting
-
-| Issue | Potential Cause | Solution |
-| :--- | :--- | :--- |
-| `ModuleNotFoundError` | Path resolution error | Run with `python start.py` or set `PYTHONPATH=.` |
-| `401 Unauthorized` | Invalid Google Credentials | Re-run `gcloud auth application-default login` |
-| `Groq API Error` | Missing/Expired API Key | Check `.env` for `GROQ_API_KEY` |
-| `Backend Unreachable` | Backend process not running | Ensure `python start.py backend` is active |
-
----
-
-## 🗺️ Future Roadmap
-
-- [ ] **Vector Search (RAG)**: Implement semantic search within document content using embeddings.
-- [ ] **OCR Integration**: Enable searching inside images and scanned PDFs.
-- [ ] **Redis Backend**: Persistent, scalable session management for production clusters.
-- [ ] **Streaming Responses**: Token-by-token conversational UI for lower perceived latency.
-- [ ] **Multi-Cloud Support**: Expand discovery to OneDrive and Dropbox.
-
----
-
-## 📄 License
-
-Distributed under the MIT License. See `LICENSE` for more information.
+The original README refers to MIT. Verify that the repository contains a
+matching `LICENSE` file before publishing that license claim.
