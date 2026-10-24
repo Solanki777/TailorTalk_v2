@@ -3,7 +3,8 @@ import json
 
 from groq import Groq
 
-from backend.config import GROQ_API_KEY
+from backend.services.api_key_service import get_api_key
+
 from backend.schemas.search import SearchIntent
 from backend.services.llm.base import LLMProvider
 
@@ -11,7 +12,18 @@ from backend.services.llm.base import LLMProvider
 class GroqProvider(LLMProvider):
 
     def __init__(self):
-        self.client = Groq(api_key=GROQ_API_KEY)
+        self.client = self._create_client()
+
+    def _create_client(self):
+        api_key = get_api_key("groq")
+
+        if not api_key:
+            raise ValueError(
+                "Groq API key is missing. Please add it in TailorTalk Settings."
+            )
+
+        return Groq(api_key=api_key)
+
     
     def classify_message(self, message: str, history: list = None) -> dict:
         

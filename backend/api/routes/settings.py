@@ -1,16 +1,12 @@
 
-import json
-from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
-
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from groq import Groq
 
 from backend.services.api_key_service import (
     save_api_key,
-    get_api_key,
     get_key_status,
+    get_masked_api_key,
     delete_api_key,
 )
 
@@ -23,53 +19,46 @@ class APIKeyRequest(BaseModel):
 
 
 def validate_api_key(provider: str, api_key: str) -> bool:
-    """Check a provider's API key without storing or returning it."""
-    try:
-        if provider == "groq":
-            client = Groq(api_key=api_key)
-            client.models.list()
-            return True
-
-        if provider == "gemini":
-            request = Request(
-                "https://generativelanguage.googleapis.com/v1beta/models",
-                headers={"x-goog-api-key": api_key},
-                method="GET",
-            )
-
-            with urlopen(request, timeout=15) as response:
-                return response.status == 200
-
+    """Validate a Groq API key without storing or returning it."""
+    if provider != "groq":
         raise HTTPException(
             status_code=400,
-            detail="Unsupported provider. Use groq or gemini.",
+            detail="Unsupported provider. Use groq.",
         )
 
-    except HTTPException:
-        raise
-    except HTTPError as exc:
-        if exc.code in (400, 401, 403):
+    try:
+        client = Groq(api_key=api_key)
+        client.models.list()
+        return True
+    except Exception as exc:
+        status_code = getattr(exc, "status_code", None)
+
+        if status_code in (400, 401, 403):
             return False
+
         raise HTTPException(
             status_code=502,
-            detail="The provider could not validate the key right now.",
+            detail=(
+                "Could not validate the Groq API key. "
+                "Check your connection and try again."
+            ),
         ) from exc
-    except (URLError, TimeoutError):
-        raise HTTPException(
-            status_code=502,
-            detail="Could not connect to the provider. Try again.",
-        )
-    except Exception:
-        raise HTTPException(
-            status_code=502,
-            detail="Key validation failed unexpectedly. Try again.",
-        )
+
+
+def build_key_response():
+    """Return key status and a masked key, never the full secret."""
+    return {
+        "providers": get_key_status(),
+        "masked_keys": {
+            "groq": get_masked_api_key("groq"),
+        },
+    }
 
 
 @router.get("/keys")
 def key_status():
-    """Return configuration status only; never return API keys."""
-    return {"providers": get_key_status()}
+    """Return configuration status and masked key."""
+    return build_key_response()
 
 
 @router.post("/keys")
@@ -77,22 +66,22 @@ def add_key(payload: APIKeyRequest):
     provider = payload.provider.strip().lower()
     api_key = payload.api_key.strip()
 
-    if provider not in {"groq", "gemini"}:
+    if provider != "groq":
         raise HTTPException(
             status_code=400,
-            detail="Unsupported provider. Use groq or gemini.",
+            detail="Unsupported provider. Use groq.",
         )
 
     if not api_key:
         raise HTTPException(
             status_code=400,
-            detail="Please enter an API key.",
+            detail="Please enter a Groq API key.",
         )
 
     if not validate_api_key(provider, api_key):
         raise HTTPException(
             status_code=400,
-            detail=f"The {provider.capitalize()} API key is invalid.",
+            detail="The Groq API key is invalid.",
         )
 
     try:
@@ -105,8 +94,8 @@ def add_key(payload: APIKeyRequest):
 
     return {
         "success": True,
-        "message": f"{provider.capitalize()} API key validated and saved.",
-        "providers": get_key_status(),
+        "message": "Groq API key validated and saved.",
+        **build_key_response(),
     }
 
 
@@ -114,10 +103,10 @@ def add_key(payload: APIKeyRequest):
 def remove_key(provider: str):
     provider = provider.strip().lower()
 
-    if provider not in {"groq", "gemini"}:
+    if provider != "groq":
         raise HTTPException(
             status_code=400,
-            detail="Unsupported provider. Use groq or gemini.",
+            detail="Unsupported provider. Use groq.",
         )
 
     try:
@@ -130,6 +119,6 @@ def remove_key(provider: str):
 
     return {
         "success": True,
-        "message": f"{provider.capitalize()} API key removed.",
-        "providers": get_key_status(),
+        "message": "Groq API key removed.",
+        **build_key_response(),
     }
