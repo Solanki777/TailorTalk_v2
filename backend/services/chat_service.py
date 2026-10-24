@@ -6,8 +6,8 @@ from backend.utils.history_manager import trim_history
 
 
 class Chatservice:
-
     def __init__(self):
+        # These objects should initialize without requiring a Groq key.
         self.llm = GroqProvider()
         self.query_builder = QueryBuilder()
         self.drive_service = DriveService()
@@ -15,7 +15,7 @@ class Chatservice:
     def process_message(self, message, history=None, last_intent=None):
         history = trim_history(history or [])
 
-        # Decide whether this message is asking to search Google Drive.
+        # Decide whether this message requests a Google Drive search.
         search_decision = self.llm.classify_message(message, history)
 
         if not search_decision["is_search"]:

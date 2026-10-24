@@ -3,18 +3,22 @@ import json
 
 from groq import Groq
 
-from backend.services.api_key_service import get_api_key
-
 from backend.schemas.search import SearchIntent
+from backend.services.api_key_service import get_api_key
 from backend.services.llm.base import LLMProvider
 
 
 class GroqProvider(LLMProvider):
+    """Groq provider that reads the latest saved API key per request."""
+
+    MODEL = "openai/gpt-oss-120b"
 
     def __init__(self):
-        self.client = self._create_client()
+        # Do not require an API key during application startup.
+        self.client = None
 
-    def _create_client(self):
+    def _get_client(self) -> Groq:
+        """Create a client using the currently saved Groq API key."""
         api_key = get_api_key("groq")
 
         if not api_key:
@@ -22,11 +26,10 @@ class GroqProvider(LLMProvider):
                 "Groq API key is missing. Please add it in TailorTalk Settings."
             )
 
+        # Read the key each time so Settings changes apply to new requests.
         return Groq(api_key=api_key)
 
-    
     def classify_message(self, message: str, history: list = None) -> dict:
-        
         """Determine whether the user wants a Google Drive search."""
         history = history or []
 
@@ -51,25 +54,22 @@ When ambiguous, set is_search to false.
 Use conversation history to understand follow-up messages.
 """
 
-        messages = [
-            {"role": "system", "content": system_prompt}
-        ]
-
+        messages = [{"role": "system", "content": system_prompt}]
         messages.extend(history)
         messages.append({"role": "user", "content": message})
 
-        response = self.client.chat.completions.create(
-            model="openai/gpt-oss-120b",
+        response = self._get_client().chat.completions.create(
+            model=self.MODEL,
             messages=messages,
             response_format={"type": "json_object"},
         )
 
-        data = json.loads(response.choices[0].message.content)
+        content = response.choices[0].message.content
+        if not content:
+            raise ValueError("Groq returned an empty classification response.")
+
+        data = json.loads(content)
         return {"is_search": bool(data.get("is_search", False))}
-
-
-
-
 
     def chat(self, message: str, history: list = None) -> str:
         """Generate a natural response for ordinary conversation."""
@@ -94,8 +94,8 @@ Use conversation history to understand follow-up messages.
         messages.extend(history)
         messages.append({"role": "user", "content": message})
 
-        response = self.client.chat.completions.create(
-            model="openai/gpt-oss-120b",
+        response = self._get_client().chat.completions.create(
+            model=self.MODEL,
             messages=messages,
         )
 
@@ -107,6 +107,7 @@ Use conversation history to understand follow-up messages.
         history: list = None,
         last_intent: dict = None,
     ) -> SearchIntent:
+        """Extract structured Google Drive search filters."""
         history = history or []
         last_intent = last_intent or {}
 
@@ -152,13 +153,15 @@ Rules:
             "content": message + context,
         })
 
-        response = self.client.chat.completions.create(
-            model="openai/gpt-oss-120b",
+        response = self._get_client().chat.completions.create(
+            model=self.MODEL,
             messages=messages,
             response_format={"type": "json_object"},
         )
 
         content = response.choices[0].message.content
-        data = json.loads(content)
+        if not content:
+            raise ValueError("Groq returned an empty search-intent response.")
 
+        data = json.loads(content)
         return SearchIntent(**data)
