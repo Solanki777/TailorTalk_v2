@@ -74,10 +74,6 @@ export default function ChatSidebar({
           <p className="mb-3 px-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
             Workspace
           </p>
-          <div className="flex items-center gap-3 rounded-xl bg-indigo-50 px-3 py-3 text-sm font-medium text-indigo-700">
-            <FolderOpen size={18} />
-            Google Drive search
-          </div>
         </div>
 
         <button

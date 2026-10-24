@@ -60,9 +60,7 @@ export default function ChatComposer({
             </button>
           </div>
         </form>
-        <p className="mt-3 text-center text-xs text-slate-400">
-          TailorTalk · Google Drive search assistant
-        </p>
+        
       </div>
     </footer>
   );
