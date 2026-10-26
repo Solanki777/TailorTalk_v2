@@ -79,17 +79,36 @@ class DriveService:
         return results.get("files", [])
 
    
-    def search_files(self, query):
+    
+    def search_files(self, query, max_results=100):
+        """Search Google Drive files across pages, up to max_results."""
         service = self.authenticate()
 
-        results = service.files().list(
-            q=query,
-            pageSize=10,
-            orderBy="createdTime desc",
-            fields="files(id,name,mimeType,createdTime,webViewLink)",
-        ).execute()
+        all_files = []
+        page_token = None
 
-        return results.get("files", [])
+        while len(all_files) < max_results:
+            page_size = min(100, max_results - len(all_files))
+
+            results = service.files().list(
+                q=query,
+                pageSize=page_size,
+                pageToken=page_token,
+                orderBy="createdTime desc",
+                fields=(
+                    "nextPageToken,"
+                    "files(id,name,mimeType,createdTime,webViewLink)"
+                ),
+            ).execute()
+
+            all_files.extend(results.get("files", []))
+
+            page_token = results.get("nextPageToken")
+            if not page_token:
+                break
+
+        return all_files
+
     
     def get_file_metadata(self, file_id: str):
         """Fetch the metadata needed to validate cached document text."""
