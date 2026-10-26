@@ -8,6 +8,13 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
 
+import mimetypes
+import tempfile
+
+from googleapiclient.http import MediaIoBaseDownload
+
+
+
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -83,4 +90,75 @@ class DriveService:
         ).execute()
 
         return results.get("files", [])
+    
+    def get_file_metadata(self, file_id: str):
+        """Fetch the metadata needed to validate cached document text."""
+        service = self.authenticate()
+
+        return service.files().get(
+            fileId=file_id,
+            fields=(
+                "id,name,mimeType,version,modifiedTime,size,"
+                "webViewLink,md5Checksum,trashed"
+            ),
+        ).execute()
+    
+
+    def download_to_temp(self, file_id: str, mime_type: str):
+        """
+        Download a supported Drive file into a temporary file.
+        The caller must delete the returned path after extraction.
+        """
+        service = self.authenticate()
+
+        google_doc_exports = {
+            "application/vnd.google-apps.document": (
+                "application/pdf", ".pdf"
+            ),
+            "application/vnd.google-apps.presentation": (
+                "application/pdf", ".pdf"
+            ),
+            "application/vnd.google-apps.spreadsheet": (
+                "text/csv", ".csv"
+            ),
+        }
+
+        export_info = google_doc_exports.get(mime_type)
+
+        if mime_type.startswith("application/vnd.google-apps.") and not export_info:
+            raise ValueError(
+                f"Unsupported Google Workspace file type: {mime_type}"
+            )
+
+        if export_info:
+            export_mime, suffix = export_info
+            request = service.files().export_media(
+                fileId=file_id,
+                mimeType=export_mime,
+            )
+        else:
+            suffix = mimetypes.guess_extension(mime_type) or ".bin"
+            request = service.files().get_media(fileId=file_id)
+
+        temp_file = tempfile.NamedTemporaryFile(
+            prefix="tailortalk_",
+            suffix=suffix,
+            delete=False,
+        )
+        temp_path = Path(temp_file.name)
+
+        try:
+            with temp_file:
+                downloader = MediaIoBaseDownload(temp_file, request)
+                done = False
+
+                while not done:
+                    _, done = downloader.next_chunk()
+
+            return temp_path
+
+        except Exception:
+            temp_path.unlink(missing_ok=True)
+            raise
+
 
